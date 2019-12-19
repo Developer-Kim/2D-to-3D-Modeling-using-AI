@@ -1,0 +1,11 @@
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+
+imgL = cv2.imread('lion1.png', 0)
+imgR = cv2.imread('lion2.png', 0)
+
+stereo = cv2.StereoBM_create(numDisparities=16*5, blockSize=29)
+disparity = stereo.compute(imgL, imgR)
+plt.imshow(disparity, 'gray')
+plt.show()
