@@ -1,0 +1,66 @@
+#
+# 정현수
+#
+==========================================================
+[ 최종 목표 영상 ] 
+● 어플 - https://www.youtube.com/watch?v=XrXralof8EA
+
+[ opencv(파이썬) 기본 문법 ]
+● https://opencv-python.readthedocs.io/en/latest/doc/01.imageStart/imageStart.html
+● https://webnautes.tistory.com/category/OpenCV/OpenCV%20Python%20%EA%B0%95%EC%A2%8C?page=2
+● https://m.blog.naver.com/samsjang/220664965832
+
+[ Stereo Vision 설명/정리 ]
+● depth map 얻는 과정 -    https://albertarmea.com/post/opencv-stereo-camera/
+                                   https://becominghuman.ai/stereo-3d-reconstruction-with-opencv-using-an-iphone-camera-part-i-c013907d1ab5
+● 스테레오 관련 소스코드 - https://github.com/grizzlytheodore/Computer-Vision-Streo/blob/master/hw2.py
+● 이미지의 특징점 매칭(Feature Matching) - http://www.gisdeveloper.co.kr/?p=6824
+● 등극선 기하(Epipolar Geometry) - http://www.gisdeveloper.co.kr/?p=6922
+
+[ 외국 사이트 정보 ]
+● 3D reconstruction(3 parts) - https://medium.com/@omar.ps16/stereo-3d-reconstruction-with-opencv-using-an-iphone-camera-part-ii-77754b58bfe0
+● 깊이 카메라로 재구성된 실시간 쉐이딩 기술 - http://gvv.mpi-inf.mpg.de/projects/RealTimeSFS/
+● 스테레오 비전 라이브러리 - https://github.com/erget/StereoVision
+● Targeting_tools ( 스테레오 비전 바탕으로 거리 측정 ) - https://drive.google.com/file/d/1zjtUgAKourfPqtgV007TdDVbZFpUdWht/view
+==========================================================
+
+#
+# 김정환
+#
+==========================================================
+opencv - computer vision
+multi view stereo
+포인트 클라우드 라이브러리
+https://github.com/alyssaq/3Dreconstruction
+==========================================================
+
+#
+# 이강욱
+#
+==========================================================
+Python/OpenCV 활용(한글) : http://www.gisdeveloper.co.kr/?cat=130 
+==========================================================
+
+#
+# 박지원
+#
+==========================================================
+http://www.3dguru.co.kr/bbs/newsroom/10271
+https://github.com/AaronJackson/vrn
+https://fkisocial.tistory.com/2493
+
+12/18
+https://github.com/chrischoy/3D-R2N2
+https://answers.opencv.org/question/3098/display-in-3d-at-set-of-binary-labelled-cvmat-images-somekind-of-slices-of-a-3d-object/
+http://docs.pointclouds.org/trunk/group__segmentation.html
+
+2D to 3D
+https://github.com/chrischoy/3D-R2N2
+
+PCL
+http://docs.pointclouds.org/trunk/group__segmentation.html
+
+
+camera collaboration and 3D reconstruction - openCV tutorial using python
+https://docs.opencv.org/master/d9/db7/tutorial_py_table_of_contents_calib3d.h
+==========================================================
