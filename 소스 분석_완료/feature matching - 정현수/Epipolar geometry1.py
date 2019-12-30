@@ -9,7 +9,8 @@ img2 = cv2.imread('E://l.jpg', 0)  # trainimage # right image
 sift = cv2.xfeatures2d.SIFT_create()    
 
 # GrayImg에서 키포인트와 디스크립터를 한번에 계산하고 리턴
-# 키포인트 : 특징들 / 디스크립터 : 이미지 히스토그램을 활용하여 표현
+# 키포인트 : 특징들
+# 디스크립터 : 특징점의 주변 특성을 이용해 해당 특징점을 표현하는 벡터를 만들어 이미지에서 같은 특징점을 매칭하거나 추출 할 때 사용
 kp1, des1 = sift.detectAndCompute(img1, None)
 kp2, des2 = sift.detectAndCompute(img2, None)
 
