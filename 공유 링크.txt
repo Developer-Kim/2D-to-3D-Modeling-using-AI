@@ -5,6 +5,10 @@
 [ 최종 목표 영상 ] 
 ● 어플 - https://www.youtube.com/watch?v=XrXralof8EA
 
+[ opencv 공식 사이트( 함수에 대한 설명 ) ]
+● Camera Calibration and 3D Reconstruction - https://docs.opencv.org/3.4.1/d9/d0c/group__calib3d.html
+● structure from motion - https://docs.opencv.org/3.4.1/d8/d8c/group__sfm.html
+
 [ opencv(파이썬) 기본 문법 ]
 ● https://opencv-python.readthedocs.io/en/latest/doc/01.imageStart/imageStart.html
 ● https://webnautes.tistory.com/category/OpenCV/OpenCV%20Python%20%EA%B0%95%EC%A2%8C?page=2
@@ -22,6 +26,10 @@
 ● 깊이 카메라로 재구성된 실시간 쉐이딩 기술 - http://gvv.mpi-inf.mpg.de/projects/RealTimeSFS/
 ● 스테레오 비전 라이브러리 - https://github.com/erget/StereoVision
 ● Targeting_tools ( 스테레오 비전 바탕으로 거리 측정 ) - https://drive.google.com/file/d/1zjtUgAKourfPqtgV007TdDVbZFpUdWht/view
+
+● 포인트 클라우드 데이터셋 - http://www.maths.lth.se/matematiklth/personal/calle/dataset/dataset.html
+● scene reconstruction - https://docs.opencv.org/3.4/d4/d18/tutorial_sfm_scene_reconstruction.html
+● The structure from motion pipeline - https://www.youtube.com/watch?v=i7ierVkXYa8
 ==========================================================
 
 #
