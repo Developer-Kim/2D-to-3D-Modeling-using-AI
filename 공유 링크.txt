@@ -9,11 +9,6 @@
 ● Camera Calibration and 3D Reconstruction - https://docs.opencv.org/3.4.1/d9/d0c/group__calib3d.html
 ● structure from motion - https://docs.opencv.org/3.4.1/d8/d8c/group__sfm.html
 
-[ opencv(파이썬) 기본 문법 ]
-● https://opencv-python.readthedocs.io/en/latest/doc/01.imageStart/imageStart.html
-● https://webnautes.tistory.com/category/OpenCV/OpenCV%20Python%20%EA%B0%95%EC%A2%8C?page=2
-● https://m.blog.naver.com/samsjang/220664965832
-
 [ Stereo Vision 설명/정리 ]
 ● depth map 얻는 과정 -    https://albertarmea.com/post/opencv-stereo-camera/
                                    https://becominghuman.ai/stereo-3d-reconstruction-with-opencv-using-an-iphone-camera-part-i-c013907d1ab5
@@ -30,6 +25,23 @@
 ● 포인트 클라우드 데이터셋 - http://www.maths.lth.se/matematiklth/personal/calle/dataset/dataset.html
 ● scene reconstruction - https://docs.opencv.org/3.4/d4/d18/tutorial_sfm_scene_reconstruction.html
 ● The structure from motion pipeline - https://www.youtube.com/watch?v=i7ierVkXYa8
+
+● https://github.com/rock913/structure-from-motion
+
+
+[ linux opencv 까는법 ]
+https://m.blog.naver.com/ekbae98/221369040692
+
+
+ceres, gflags, glog, vtk support, eigen 이 모두 ON상태여야함
+
+cmake 명령어를 이것을 쓸것
+cmake -D BUILD_TIFF=ON -D WITH_CUDA=OFF -D ENABLE_AVX=OFF -D WITH_OPENGL=ON -D WITH_OPENCL=OFF -D WITH_IPP=OFF -D WITH_TBB=ON -D BUILD_TBB=ON -D WITH_EIGEN=ON -D WITH_V4L=ON -D WITH_VTK=ON -D BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-3.4.1/modules ../
+
+코드를 실행시켜도 오류가 나는데 맨 윗줄 코드에
+#define CERES_FOUND true
+이것을 적어주고, Eigen/Core가 오류가 뜨면 Eigen이 eigen/Eigen/Core 이 경로에 있는데 
+Eigen폴더를 밖으로 복사하면 해결
 ==========================================================
 
 #
@@ -39,6 +51,7 @@
 [ 위키백과 ]
 ● Structure from motion - https://en.wikipedia.org/wiki/Structure_from_motion
 ● 여러 이미지에서 3D 재구성 - https://en.wikipedia.org/wiki/3D_reconstruction_from_multiple_images
+● cmake 튜토리얼 - https://www.tuwlab.com/ece/27260
 ==========================================================
 
 #
@@ -56,6 +69,9 @@
 
 [SfM 활용 순차적으로 설명을 잘해놓은 github] - 영어
 ● https://github.com/atomoclast/cSfM
+
+[OpenCV python tutorials]
+● https://opencv-python-tutroals.readthedocs.io/en/latest/index.html
 ==========================================================
 
 #
