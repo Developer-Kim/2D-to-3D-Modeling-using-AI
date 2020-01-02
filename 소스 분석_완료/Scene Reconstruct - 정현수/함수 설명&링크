@@ -1,0 +1,29 @@
+> reconstruct(): 자동 보정을 수행하는 동안 2D 통신에서 3D 점을 재구성.
+공식문서: https://docs.opencv.org/3.4.1/da/db5/group__reconstruction.html - [4/4]
+
+
+
+> Affine3d : 아핀행렬 ( 회전/변환 행렬 ) - 4*4 매트릭스
+공식문서: https://docs.opencv.org/master/dd/d99/classcv_1_1Affine3.html - [3/6]
+
+
+
+> viz::WCloud(): 3D 포인트 클라우드
+공식문서: https://docs.opencv.org/3.4/db/d82/classcv_1_1viz_1_1WCloud.html - [2/4]
+
+
+
+> viz::WTrajectory(): 프레임은 영향을받지 않습니다. 주어진 경로의 궤적을 다음과 같이 표시합니다.
+        PATH : 경로를 나타내는 폴리 라인을 표시합니다.
+        Frame : 각 포즈에서 좌표 프레임을 표시합니다.
+        PATH & FRAMES : 폴리 라인과 좌표 프레임을 모두 표시합니다.
+공식문서: https://docs.opencv.org/3.1.0/d0/da3/classcv_1_1viz_1_1WTrajectory.html
+
+
+
+> viz::WTrajectoryFrustums(): 궤적의 각 포즈에서 경로를 표시합니다.
+공식문서: https://docs.opencv.org/3.1.0/da/d80/classcv_1_1viz_1_1WTrajectoryFrustums.html - [1/2]
+
+
+
+
