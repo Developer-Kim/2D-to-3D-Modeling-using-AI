@@ -87,7 +87,22 @@ int main(int argc, char* argv[])
   /*
   reconstruct(): 자동 보정을 수행하는 동안 2D 통신에서 3D 점을 재구성.
 
-  공식문서: https://docs.opencv.org/3.4.1/da/db5/group__reconstruction.html  - reconstruct() [4/4]
+  공식문서: https://docs.opencv.org/3.4.1/da/db5/group__reconstruction.html  - 4/4 번째
+
+  void cv::sfm::reconstruct	(	const std::vector< String > 	images,
+                                            OutputArray 	Rs,
+                                            OutputArray   Ts,
+                                            OutputArray 	points3d,
+                                            InputOutputArray 	K,
+                                            bool 	is_projective = false )
+
+  [ 인자목록 ]
+    > images: 이미지 경로가 들어있는 string 벡터
+    > Ps: 카메라의 3x3 회전 출력 벡터.
+    > Ts: 카메라의 3x1 변환 출력 벡터.
+    > points3d: 추정 된 3d 포인트를 가진 출력 배열.
+    > K: 초기 추측으로 사용되는 입력 매개 변수.  (회전/변환 매트릭스 대입)
+    > is_projective: 참이면, 카메라는 투영이어야합니다.
   */
   reconstruct(images_paths, Rs_est, ts_est, K, points3d_estimated, is_projective);
 
@@ -122,8 +137,15 @@ int main(int argc, char* argv[])
 
   /*
     Affine3d : 아핀행렬 ( 회전/변환 행렬 ) - 4*4 매트릭스
+    
+    cv::Affine3< T >::Affine3	(	const Mat3 & 	R,
+                                                const Vec3 & 	t = Vec3::all(0) )	
 
     공식문서: https://docs.opencv.org/master/dd/d99/classcv_1_1Affine3.html - Affine3() [3/6]
+    
+    [ 인자 목록 ]
+    R: 3*3 회전 행렬
+    t:  3*1 변환 행렬
   */
 
   // path에 Affine3d 형식으로 reconstruct에서 얻은 Rs_est(회전행렬), ts_est(변환행렬)로 변환 후 대입
@@ -139,7 +161,15 @@ int main(int argc, char* argv[])
 
     /*
         WCloud(): 3D 포인트 클라우드
+
         공식문서: https://docs.opencv.org/3.4/db/d82/classcv_1_1viz_1_1WCloud.html - WCloud() [2/4]
+
+        cv::viz::WCloud::WCloud	(	InputArray 	cloud,
+                                                    const Color & 	color = Color::white() )
+
+      	[ 인자 목록 ]
+        cloud: 유형이 될 수있는 클라우드 포인트 Set - CV_32FC3, CV_32FC4, CV_64FC3, CV_64FC4.
+        color: 전체 클라우드의 단일 색깔 
     */
 
     // point cloud를 시각적으로 볼 수 있게 함.
@@ -154,19 +184,43 @@ int main(int argc, char* argv[])
   if ( path.size() > 0 )
   {
     /*
-        WTrajectory:() 프레임은 영향을받지 않습니다. 주어진 경로의 궤적을 다음과 같이 표시합니다.
+        WTrajectory(): 프레임은 영향을받지 않습니다. 주어진 경로의 궤적을 다음과 같이 표시합니다.
         PATH : 경로를 나타내는 폴리 라인을 표시합니다.
         Frame : 각 포즈에서 좌표 프레임을 표시합니다.
         PATH & FRAMES : 폴리 라인과 좌표 프레임을 모두 표시합니다.
         
         공식문서: https://docs.opencv.org/3.1.0/d0/da3/classcv_1_1viz_1_1WTrajectory.html
-    */
-    /*
-        viz::WTrajectoryFrustums(): 궤적의 각 포즈에서 경로를 표시합니다.
-        공식문서: https://docs.opencv.org/3.1.0/da/d80/classcv_1_1viz_1_1WTrajectoryFrustums.html - [1/2]
-   */
 
-    // 카메라 렌더링
+
+
+          cv::viz::WTrajectory::WTrajectory	(	InputArray 	path,
+                                                                   int 	display_mode = WTrajectory::PATH,
+                                                                   double 	scale = 1.0,
+                                                                   const Color & 	color = Color::white() )	
+
+          path: 궤적에 대한 포즈 목록(Affine3d)
+          display_mode: 디스플레이 모드. PATH, FRAMES 및 BOTH가 될 수 있습니다.
+          scale: 프레임의 스케일. 폴리 라인은 영향을받지 않습니다.
+          color: 경로를 나타내는 폴리 라인의 색상입니다.
+
+        ==========================================================================
+
+          viz::WTrajectoryFrustums(): 궤적의 각 포즈에서 경로를 표시합니다.
+
+          공식문서: https://docs.opencv.org/3.1.0/da/d80/classcv_1_1viz_1_1WTrajectoryFrustums.html - [1/2]
+
+          cv::viz::WTrajectoryFrustums::WTrajectoryFrustums	(	InputArray 	path,
+                                                                                                const Matx33d & 	K,
+                                                                                                double 	scale = 1.,
+                                                                                                const Color & 	color = Color::white())	
+      
+          path: 궤적에 대한 포즈 목록(Affine3d)
+          K:  카메라의 고유 매트릭스
+          scale: 절두체의  크기
+          color: 경로를 나타내는 폴리 라인의 색상입니다.
+    */
+
+   // 카메라 렌더링
     cout << "Rendering Cameras  ... ";
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
     window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path, K, 0.1, viz::Color::yellow()));
