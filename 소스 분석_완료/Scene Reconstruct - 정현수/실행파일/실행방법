@@ -1,0 +1,13 @@
+makeText는 temple 폴더안에 temple.txt 를 생성해줌. 
+temple.txt 안에는 범위를 설정해서 사진들의 이름목록들이 있음.
+
+makeText 실행 후:
+경로 입력 ex) ../Input/temple/temple.txt
+저장할 텍스트 이름까지 지정해줘야함.
+범위 입력 ex) 1 50 
+1~50 범위의 사진들을 텍스트에 목록으로 저장해줌
+
+
+Reconstruct 실행:  
+인자: ./Reconstruct [temple 폴더 안의 temple.txt 경로] 거리 X위치 Y위치
+./Reconstruct /home/jeong/Code/C++/abc/temple/temple.txt 400 200 25
