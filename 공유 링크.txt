@@ -27,6 +27,21 @@
 ● The structure from motion pipeline - https://www.youtube.com/watch?v=i7ierVkXYa8
 
 ● https://github.com/rock913/structure-from-motion
+
+
+[ linux opencv 까는법 ]
+https://m.blog.naver.com/ekbae98/221369040692
+
+
+ceres, gflags, glog, vtk support, eigen 이 모두 ON상태여야함
+
+cmake 명령어를 이것을 쓸것
+cmake -D BUILD_TIFF=ON -D WITH_CUDA=OFF -D ENABLE_AVX=OFF -D WITH_OPENGL=ON -D WITH_OPENCL=OFF -D WITH_IPP=OFF -D WITH_TBB=ON -D BUILD_TBB=ON -D WITH_EIGEN=ON -D WITH_V4L=ON -D WITH_VTK=ON -D BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-3.4.1/modules ../
+
+코드를 실행시켜도 오류가 나는데 맨 윗줄 코드에
+#define CERES_FOUND true
+이것을 적어주고, Eigen/Core가 오류가 뜨면 Eigen이 eigen/Eigen/Core 이 경로에 있는데 
+Eigen폴더를 밖으로 복사하면 해결
 ==========================================================
 
 #
