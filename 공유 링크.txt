@@ -42,6 +42,65 @@ cmake -D BUILD_TIFF=ON -D WITH_CUDA=OFF -D ENABLE_AVX=OFF -D WITH_OPENGL=ON -D W
 #define CERES_FOUND true
 이것을 적어주고, Eigen/Core가 오류가 뜨면 Eigen이 eigen/Eigen/Core 이 경로에 있는데 
 Eigen폴더를 밖으로 복사하면 해결
+
+
+###############################
+< OpenMVG와 PMVS2의 설치와 sfm 획득 및 실행 영상 >
+https://www.youtube.com/watch?v=RH4ObwsuL1E
+
+
+[      전체적인 흐름       ]
+OpenMVG로 사진에서 Point Cloud를 추출.
+OpenMVS로 뽑은 Point Cloud에서 손실된 점들을 복구하고 Mesh로 제작, 세밀하게 작업, 마지막으로 Texturing까지 진행.
+CMVS, PMVS2로 OpenMVG를 통해 얻은 Point Cloud나 OpenMVS에서 제작된 모델들을 확인하면 될 듯함.
+NuxSFM은 확실히 모르지만, 리눅스 환경에서 SFM을 확인할 수 있는 소프트웨어 같음.
+
+최대한 OpenMVG와 OpenMVS에 대한 조사가 이루어져야 하고, 괜찮다고 판단되면 
+OpenMVS보다 OpenMVG에 대한 설치법과 사용법을 익히고 사용해보도록 할것.
+
+
+[OpenMVG]
+Multi View Geometry 라이브러리
+이미지 정합 뿐만 아니라 Sfm에 관한 라이브러리도 존재함.
+
+공식 Github - https://github.com/openMVG/openMVG
+공식 Document - https://openmvg.readthedocs.io/en/latest/
+
+공식 Github에 라이브러리 뿐만 아니라 Example 예시도 존재함.
+
+OpenMVG를 통해 이미지의 Point Cloud 뽑아낼 수 있음.
+http://imagine.enpc.fr/~moulonp/openMVG/coreFeatures.html 
+기능들 지원.
+
+[OpenMVS]
+Open Multi-View Stereo reconstruction 라이브러리
+OpenMVG를 통해 얻어온 포인트 클라우드들이 조밀하지 못하거나, 적은 포인트들이 존재할 때 계산을 통해 조밀하게 만들어주고 완성도 있게 만들어줌.
+소실된 포인트 클라우드들을 복구해준다고 함.
+
+공식 Github - https://github.com/cdcseacave/openMVS
+OpenMVS 사이트 - http://cdcseacave.github.io/openMVS/
+
+OpenMVS 사이트에서 첫번째 페이지에 그림을 눌러보면 3D 모델이 나오는데 그게 OpenMVS를 통해 만들어진 완성도 있는 작품.
+사용용도: https://github.com/cdcseacave/openMVS/wiki/Usage
+여기를 들어가본 결과, 포인트 클라우드들이 꽉찬 모델로 되었고 뿐만 아니라
+Rough Mesh Reconstruction, Mesh Refinement (optional), Mesh Texturing 
+모든 과정을 할 수 있음. 
+
+즉 OpenMVG를 통해 나온 포인트 클라우드들을 바탕으로 OpenMVS로 나머지 3D모델링을 하면 완성.
+
+[CMVS, PMVS2]
+CMVS에는 PMVS2가 포함되어 있으며 추가적인 유용한 기능이 있다.
+PMVS는 일련의 영상과 카메라 파라미터를 취한 다음, 영상에 보이는 물체나 장면의 3D 구조를 재구성하는 멀티뷰 스테레오 소프트웨어다
+공식 Github - https://github.com/pmoulon/CMVS-PMVS
+
+공식 사이트(cmvs) - https://www.di.ens.fr/cmvs/
+공식 사이트(pmvs2) - https://www.di.ens.fr/pmvs/
+
+[NuxSFM]
+NuxSFM은 SFM(Structure From Motion)과 3D Photogrammetry 전용 Linux 배포판이다. 리눅스 From Scratch(LFS 7.6 non systemd) 북에서 개발한 64비트 운영체제를 제공하며, 팩맨 개발팀(Arch Linux)이 개발한 패키지 매니저 솔루션 팩맨과 함께 나온다.
+
+공식 Github - https://github.com/caomw/NuxSFM-2.0
+
 ==========================================================
 
 #
