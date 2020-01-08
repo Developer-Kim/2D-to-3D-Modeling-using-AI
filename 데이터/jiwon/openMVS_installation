@@ -15,3 +15,42 @@ git clone -b 1.14.x --single-branch https://ceres-solver.googlesource.com/ceres-
 4. openMVS cmake시 vcglib 경로 확인
 ex) 
 cmake . ../openMVS -DCMAKE_BUILD_TYPE=Release -DVCG_ROOT="/home/jiwon/vcglib"
+
+=======================================================================================================================
+=======================================================================================================================
+
+샘플 폴더 다운로드
+git clone https://github.com/cdcseacave/openMVS_sample
+
+#MvgMvs_Pipeline.py 실행 방법
+https://github.com/cdcseacave/openMVS/wiki/Usage
+
+1. 파이썬 파일 내부의 경로 인자 변경
+OPENMVG_BIN = "/home/jiwon/openMVG_Build/Linux-x86_64-RELEASE"
+OPENMVS_BIN = "/home/jiwon/openMVS_build/bin"
+--> 자신의 경로로 변경(openMVG, openMVS build 시 생성되는 폴더 아래에서 찾으면 됨)
+
+2.python ~/openMVS_build/openMVS_sample/MvgMvs_Pipeline.py  ~/openMVS_build/openMVS_sample/images ./output_mvgmvs
+(openMVS_sample clone 시 생성된 폴더 아래 .py 파일과 image 폴더 있음)
+
+3. openMVS_build/bin 으로 경로 변경
+cd openMVS_build/bin
+(아래 실행 파일들이 있는 경로로 경로 변경)
+
+4.  openMVG_main_openMVG2openMVS -i /home/jiwon/openMVG_Build/software/SfM/tutorial_out/reconstruction_global/sfm_data.bin -o scene.mvs -d scene_undistorted_images
+(-i sfm_data.bin 경로 찾아서 변경,  -o 는 해당 명령어로 생성되는 결과 파일)
+
+<<여기부터 https://github.com/cdcseacave/openMVS/wiki/Usage 참조해서 실행 결과 그림으로 확인하면 편함>>
++ 문서에 써있는 명령어 실행 시 "./" 붙여야 정상적으로 실행됨
++ 아래 실행파일 실행하면, 생기는 결과 파일이 많아져서 따로 폴더 만들어도 괜찮을 듯 (나는 그냥 함..ㅋㅋ)
+
+5. ./DensifyPointCloud ./scene.mvs
+
+6. ./TextureMesh scene_dense_mesh_refine.mvs
+
+7. ./ReconstructMesh scene_dense.mvs
+
+8. ./RefineMesh scene_dense_mesh.mvs --max-face-area 16
+
+9. ./TextureMesh scene_dense_mesh_refine.mvs
+
