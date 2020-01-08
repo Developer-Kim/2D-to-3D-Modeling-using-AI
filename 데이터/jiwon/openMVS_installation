@@ -1,0 +1,16 @@
+#참고 사이트
+http://daddynkidsmakers.blogspot.com/2019/11/2-3-sfm-openmvg.html
+중 openMVS 부분
+
+#주의사항
+1. eigen 3.2 설치해야함(3.3 X)
+
+2. ceres clone시 사이트의 명령어 사용 x (eigen 3.3 이상만 호환되는 ceres 2.0 다운로드 되어 오류 발생)
+
+3. 대체 명령어
+git clone -b 1.14.x --single-branch https://ceres-solver.googlesource.com/ceres-solver ceres-solver
+(ceres 1.14 브랜치만 clone 하여 cmake 진행하면 오류 없이 설치 가능)
+
+4. openMVS cmake시 vcglib 경로 확인
+ex) 
+cmake . ../openMVS -DCMAKE_BUILD_TYPE=Release -DVCG_ROOT="/home/jiwon/vcglib"
