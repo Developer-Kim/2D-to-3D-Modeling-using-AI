@@ -1,0 +1,15 @@
+1.
+/home/kangwook/openMVG/src/openMVG/exif/sensor_width_database/sensor_width_database.txt
+파일에서 자신의 카메라 모델명과 sensor_width를 추가
+예)
+SM-G970N;4.32
+
+앞에 제조사(Samsung 같은거)를 쓰면 안됨..
+안쓰고 모델명하고 sensor_width만 입력해야함
+
+그 후 build폴더에서 다시 cmake를 했는데 안해도 될 것 같긴함
+
+2.
+/home/kangwook/openMVG_Build/software/SfM/ImageDataset_Example1/images
+에 원하는 이미지를 넣고
+tutorial_demo.py를 살짝 수정 후 터미널에서 python tutorial_demo.py 실행
