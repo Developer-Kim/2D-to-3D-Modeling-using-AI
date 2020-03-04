@@ -46,11 +46,9 @@ cd openMVS_build/bin
 
 5. ./DensifyPointCloud ./scene.mvs
 
-6. ./TextureMesh scene_dense_mesh_refine.mvs
+6. ./ReconstructMesh scene_dense.mvs
 
-7. ./ReconstructMesh scene_dense.mvs
+7. ./RefineMesh scene_dense_mesh.mvs --max-face-area 16
 
-8. ./RefineMesh scene_dense_mesh.mvs --max-face-area 16
-
-9. ./TextureMesh scene_dense_mesh_refine.mvs
+8. ./TextureMesh scene_dense_mesh_refine.mvs
 
