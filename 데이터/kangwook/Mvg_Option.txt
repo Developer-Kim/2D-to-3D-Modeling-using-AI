@@ -1,0 +1,15 @@
+1. Imagelisting
+2. ComputeFeatures
+ * -m (describer method) : SIFT, AKAZE_FLOAT, AKAZE_MLDB
+ * -u (upright) : 0, 1(orientation angle = 0°)
+ * -p (preset) : NORMAL, HIGH, ULTRA
+3. ComputeMatches
+ * -r (ratio : 가장 가까운 이웃 거리 비율) : 0.8(default), 0.6(제한적, 오탐지를 줄임)
+ * -g (geometric model) : f(Fundamental), e(Essential), h(Homography)
+ * -n (nearest matching method) : AUTO, BRUTEFORCEL2, ANNL2, CASCADHEASHINGL2, FASTCASCADEHASHINGL2, BRUTEFORCEHAMMING
+4. Reconstruction(Sequential)
+ * -f (refine instrinsics) : ADJUST_ALL(default), NONE, ADJUST_FOCAL_LENGTH, ADJUST_PRINCIPAL_POINT, ADJUST_DISTORTION
+5. Reconstruction(Global)
+ * -f (refine instrinsics) : ADJUST_ALL(default), NONE, ADJUST_FOCAL_LENGTH, ADJUST_PRINCIPAL_POINT, ADJUST_DISTORTION 
+ * -r (rotation averaging) : 1(L1 회전 평균화), 2(L2 회전 평균화, default)
+ * -t (translation averaging) : 1(L1 translation 평균), 2(L2 translation 평균), 3(SoftL1 최소화, default)
