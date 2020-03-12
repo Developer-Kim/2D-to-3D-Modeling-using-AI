@@ -4,7 +4,7 @@
  * "--min-point-distance" or "-d" (minimum distance in pixels between two 3D points) : 2.5f(default), 6(개발자 추천)
 3. Refine Mesh
  * "--resolution-level"(image scale down) : 1(default), 2(1/2배), 3(1/3배) -> 숫자가 높을수록 uncalibrated images가 더 자주 나와서 안좋을 수 있음
- * "--max-face-area"(maximum face area) : 64(default), 16(낮음), 32(보통) -> 높을수록 주변의 배경을 지워준다고 함
+ * "--max-face-area"(maximum face area) : 64(default), 16(낮음), 32(보통) -> 높을수록 주변의 배경을 지워준다고 함, 1024까지 해본 결과 256까지가 최대치 정도 인 것 같고 그보다 높을 경우 mesh가 굉장히 깨짐
  * "--mesh-file", "<file name>" (hidden option : add .ply file) : mesh를 crop했거나 편집했을 때 ply파일을 추가해서 이 파일을 기준으로 refine mesh를 할 수 있음.
 4. Texture Mesh
  * "--resolution-level"(image scale down) : 1(default), 2(1/2배), 3(1/3배) -> 숫자가 높을수록 uncalibrated images가 더 자주 나와서 안좋을 수 있음
