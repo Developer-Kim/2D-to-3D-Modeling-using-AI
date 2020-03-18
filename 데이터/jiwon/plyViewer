@@ -1,0 +1,13 @@
+<ply viewer installation>
+
+======================= pptk module =====================
+
+github : https://github.com/heremaps/pptk
+
+1. pip3 install pptk
+
+2. pip3 install numpy
+
+3. pip3 install plyfile
+
+4. test.py 실행 (Truck.ply 같이 다운로드 해서 테스트 / 자기 ply 사용할 시에는 #5 줄에 ply filename 변경)
