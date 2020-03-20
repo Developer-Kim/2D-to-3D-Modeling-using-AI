@@ -78,12 +78,12 @@ class Ui_MainWindow(object):
         self.v.attributes(rgb / 255.)
         #self.v.wait()
         viwerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id in str
-        print(viwerWinID_str)
-        viwerWinID_int = int(viwerWinID_str, 16)    # str to int
-        print(viwerWinID_int)
-        viwerWinID = viwerWinID_int + 0x200         # int to hex
-        print(viwerWinID)
-        self.window = QtGui.QWindow.fromWinId(0x06600004)    
+        print(viewerWinID_str)
+        viewerWinID_int = int(viewerWinID_str, 0)    # str to int
+        print(viewerWinID_int)
+        #viewerWinID = hex(viewerWinID_int)           # int to hex
+        #print(type(viewerWinID))
+        self.window = QtGui.QWindow.fromWinId(viewerWinID_int)    
         self.windowcontainer = QWidget.createWindowContainer(self.window, self.centralwidget)
         self.layout.addWidget(self.windowcontainer, 0, 0)
         
