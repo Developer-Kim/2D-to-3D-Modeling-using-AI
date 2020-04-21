@@ -9,13 +9,13 @@
 import os
 import subprocess
 import sys
-import pptk
+#import pptk
 import math
 import string
 import numpy as np
-import plyfile
+#import plyfile
 import cv2
-from wmctrl import Window
+#from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 
@@ -33,20 +33,18 @@ option["texture"] = dict()
 
 program_dir = os.getcwd()
 input_dir = os.path.join(program_dir, "Image")
+ChangeWhite_dir = ""
+matches_dir = ""
+reconstruction_dir = ""
+Scene_dir = ""
 output_dir = ""
 
 OPENMVG_SFM_BIN = os.path.join(program_dir, "Binary")
 CAMERA_SENSOR_WIDTH_DIRECTORY = os.path.join(program_dir, "Camera")
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
 
-ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
-matches_dir = os.path.join(output_dir, "matches")
-reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
-Scene_dir = os.path.join(output_dir,"Scene")
 
-# Create the ouput/matches folder if not present
-if not os.path.exists(matches_dir):
-  os.mkdir(matches_dir)
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -358,6 +356,7 @@ class Ui_MainWindow(object):
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 499, 781, 51))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
+        #self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticafile_listlLayoutWidget_3)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
@@ -408,12 +407,29 @@ class Ui_MainWindow(object):
         pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
         pIntrisics.wait()
 
+        #====================================================================
+        # Features 옵션 설정
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
+
+        for op in option["features"]:
+            param.append(op)
+            param.append(option["features"][op])
+
         print ("2. Compute features")
-        pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-m", "SIFT"] )
+        pFeatures = subprocess.Popen( param )
         pFeatures.wait()
 
+        #====================================================================
+        # Matches 옵션 설정
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
+
+        for op in option["matches"]:
+            param.append(op)
+            param.append(option["matches"][op])
+
         print ("3. Compute matches")
-        pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
+        pMatches = subprocess.Popen( param )
         pMatches.wait()
 
         # Create the reconstruction if not present
@@ -425,12 +441,12 @@ class Ui_MainWindow(object):
         file_list = os.listdir(input_dir)
         if not os.path.exists(ChangeWhite_dir):
             os.mkdir(ChangeWhite_dir)
-            
+        
         for str in file_list:
-            path = input_dir + str
+            path = input_dir + "/" + str
             if "_mask" in str:
-                color_dir = input_dir + str[:-9] + ".jpg"
-                
+                color_dir = input_dir + "/" + str[:-9] + ".jpg"
+                print(color_dir)
                 mask = cv2.imread(path, 0)
                 img = cv2.imread(color_dir)
                 
@@ -457,9 +473,22 @@ class Ui_MainWindow(object):
                     cv2.imwrite(mask_png, weighted_img)
         
 
+        #====================================================================
+        # Sequential 옵션 설정
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
+
+        for op in option["seq"]:
+            param.append(op)
+            param.append(option["seq"][op])
+
+
         print ("4. Do Sequential/Incremental reconstruction")
-        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir] )
+        pRecons = subprocess.Popen( param )
         pRecons.wait()
+
+        #====================================================================
+        # 나머지
 
         print ("5. Colorize Structure")
         pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
@@ -478,6 +507,7 @@ class Ui_MainWindow(object):
         
         pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
         pRecons.wait()
+        #====================================================================
 
     def selectOptionFunc(self, pipNum, signal):
         if pipNum == "features":
@@ -520,12 +550,20 @@ class Ui_MainWindow(object):
             print(option["texture"])
 
             
-
-
-
     def outputDialogFunc(self, MyWindow):
+        global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
         #QFileDialog.getOpenFileName()
         output_dir = str(QFileDialog.getExistingDirectory(self.centralwidget))
+        ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
+        matches_dir = os.path.join(output_dir, "matches")
+        reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
+        Scene_dir = os.path.join(output_dir,"Scene")
+
+        print("!!"+output_dir)
+        # Create the ouput/matches folder if not present
+        if not os.path.exists(matches_dir):
+            os.mkdir(matches_dir)
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -729,7 +767,6 @@ class MyWindow(QtWidgets.QMainWindow):
         self.show()
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     #MainWindow = QtWidgets.QMainWindow()
     MainWindow = MyWindow()
