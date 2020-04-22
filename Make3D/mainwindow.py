@@ -78,13 +78,13 @@ class Ui_MainWindow(object):
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.label = QtWidgets.QLabel(self.v1_widget)
-        self.label.setGeometry(QtCore.QRect(430, 10, 141, 20))
+        self.label.setGeometry(QtCore.QRect(1120, 10, 141, 20))
         font = QtGui.QFont()
         font.setPointSize(8)
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.horizontalSlider = QtWidgets.QSlider(self.v1_widget)
-        self.horizontalSlider.setGeometry(QtCore.QRect(430, 25, 141, 21))
+        self.horizontalSlider.setGeometry(QtCore.QRect(1120, 25, 141, 21))
         self.horizontalSlider.setMouseTracking(False)
         self.horizontalSlider.setSingleStep(50)
         self.horizontalSlider.setPageStep(50)
@@ -417,27 +417,76 @@ class Ui_MainWindow(object):
         #output path Dialog
         self.btn_outputPath.clicked.connect(lambda:self.outputDialogFunc(MyWindow))
         #radio button 이벤트
-        self.DescriberMethodGroup.buttonClicked.connect(lambda: self.selectOptionFunc("features","-m"))
-        self.UprightGroup.buttonClicked.connect(lambda: self.selectOptionFunc("features","-u"))
-        self.PresetGroup.buttonClicked.connect(lambda: self.selectOptionFunc("features","-p"))
+        self.DescriberMethodGroup.buttonToggled.connect(lambda: self.selectOptionFunc("features","-m"))
+        self.UprightGroup.buttonToggled.connect(lambda: self.selectOptionFunc("features","-u"))
+        self.PresetGroup.buttonToggled.connect(lambda: self.selectOptionFunc("features","-p"))
+        self.RatioGroup.buttonToggled.connect(lambda: self.selectOptionFunc("matches","-r"))
+        self.GeometricModelGroup.buttonToggled.connect(lambda: self.selectOptionFunc("matches","-g"))
+        self.NearestMatchingGroup.buttonToggled.connect(lambda: self.selectOptionFunc("matches","-n"))
+        self.RefineIntrinsicsGroup.buttonToggled.connect(lambda: self.selectOptionFunc("seq", "-f"))
+        self.DensifyResolutionGroup.buttonToggled.connect(lambda: self.selectOptionFunc("densify", "--resolution-level"))
+        self.MinPointGroup.buttonToggled.connect(lambda: self.selectOptionFunc("mesh", "-d"))
+        self.ResolutionGroup.buttonToggled.connect(lambda: self.selectOptionFunc("refine", "--resolution-level"))
+        self.MaxFaceAreaGroup.buttonToggled.connect(lambda: self.selectOptionFunc("refine", "--max-face-area"))
+        self.TextureResolutionGroup.buttonToggled.connect(lambda: self.selectOptionFunc("texture", "--resolution-level"))
+        #Low 품질로 옵셥 초기화
+        self.radioBtn_SIFT.setChecked(True)
+        self.radioBtn_0.setChecked(True)
+        self.radioBtn_NORMAL.setChecked(True)
+        self.radioBtn_08.setChecked(True)
+        self.radioBtn_f.setChecked(True)
+        self.radioBtn_FASTCASCADEHASHINGL2.setChecked(True)
+        self.radioBtn_ALL.setChecked(True)
+        self.radioBtn_RL_3.setChecked(True)
+        self.radioBtn_minPoint_6.setChecked(True)
+        self.radioBtn_RL_6.setChecked(True)
+        self.radioBtn_MaxFace_16.setChecked(True)
+        self.radioBtn_RL_9.setChecked(True)
 
-        self.RatioGroup.buttonClicked.connect(lambda: self.selectOptionFunc("matches","-r"))
-        self.GeometricModelGroup.buttonClicked.connect(lambda: self.selectOptionFunc("matches","-g"))
-        self.NearestMatchingGroup.buttonClicked.connect(lambda: self.selectOptionFunc("matches","-n"))
-        self.RefineIntrinsicsGroup.buttonClicked.connect(lambda: self.selectOptionFunc("seq", "-f"))
-        self.DensifyResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("densify", "--resolution-level"))
-        self.MinPointGroup.buttonClicked.connect(lambda: self.selectOptionFunc("mesh", "-d"))
-        self.ResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("refine", "--resolution-level"))
-        self.MaxFaceAreaGroup.buttonClicked.connect(lambda: self.selectOptionFunc("refine", "--max-face-area"))
-        self.TextureResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("texture", "--resolution-level"))
-    
     def optionChecking(self):
+        #LOW Level로 옵션 초기화
         if self.horizontalSlider.value() >= 0 and self.horizontalSlider.value() <= 25:
             self.horizontalSlider.setValue = 0
+
+            self.radioBtn_SIFT.setChecked(True)
+            self.radioBtn_0.setChecked(True)
+            self.radioBtn_NORMAL.setChecked(True)
+            self.radioBtn_08.setChecked(True)
+            self.radioBtn_f.setChecked(True)
+            self.radioBtn_FASTCASCADEHASHINGL2.setChecked(True)
+            self.radioBtn_RL_3.setChecked(True)
+            self.radioBtn_minPoint_25f.setChecked(True)
+            self.radioBtn_RL_6.setChecked(True)
+            self.radioBtn_RL_9.setChecked(True)
+        #MEDIUM Level로 옵션 초기화
         elif self.horizontalSlider.value() > 25 and self.horizontalSlider.value() <= 50:
             self.horizontalSlider.setValue = 50
+
+            self.radioBtn_SIFT.setChecked(True)
+            self.radioBtn_0.setChecked(True)
+            self.radioBtn_HIGH.setChecked(True)
+            self.radioBtn_08.setChecked(True)
+            self.radioBtn_f.setChecked(True)
+            self.radioBtn_ANNL2.setChecked(True)
+            self.radioBtn_RL_2.setChecked(True)
+            self.radioBtn_minPoint_25f.setChecked(True)
+            self.radioBtn_RL_5.setChecked(True)
+            self.radioBtn_RL_8.setChecked(True)
+
+        #HIGH Level로 옵션 초기화
         elif self.horizontalSlider.value() > 50 and self.horizontalSlider.value() <= 100:
             self.horizontalSlider.setValue = 100
+            self.radioBtn_SIFT.setChecked(True)
+            self.radioBtn_0.setChecked(True)
+            self.radioBtn_ULTRA.setChecked(True)
+            self.radioBtn_08.setChecked(True)
+            self.radioBtn_f.setChecked(True)
+            self.radioBtn_ANNL2.setChecked(True)
+            self.radioBtn_RL_1.setChecked(True)
+            self.radioBtn_minPoint_6.setChecked(True)
+            self.radioBtn_RL_4.setChecked(True)
+            self.radioBtn_RL_7.setChecked(True)
+
 
     def startPipline(self):
         print ("1. Intrinsics analysis")
