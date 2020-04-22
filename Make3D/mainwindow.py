@@ -9,13 +9,13 @@
 import os
 import subprocess
 import sys
-#import pptk
+import pptk
 import math
 import string
 import numpy as np
-#import plyfile
+import plyfile
 import cv2
-#from wmctrl import Window
+from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 
@@ -33,27 +33,29 @@ option["texture"] = dict()
 
 program_dir = os.getcwd()
 input_dir = os.path.join(program_dir, "Image")
-ChangeWhite_dir = ""
-matches_dir = ""
-reconstruction_dir = ""
-Scene_dir = ""
 output_dir = ""
 
 OPENMVG_SFM_BIN = os.path.join(program_dir, "Binary")
 CAMERA_SENSOR_WIDTH_DIRECTORY = os.path.join(program_dir, "Camera")
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
 
+ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
+matches_dir = os.path.join(output_dir, "matches")
+reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
+Scene_dir = os.path.join(output_dir,"Scene")
 
-
+# Create the ouput/matches folder if not present
+if not os.path.exists(matches_dir):
+  os.mkdir(matches_dir)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(1500, 900)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 20, 781, 51))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 20, 1480, 50))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout_1 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout_1.setContentsMargins(0, 0, 0, 0)
@@ -64,7 +66,7 @@ class Ui_MainWindow(object):
         self.btn_outputPath.setGeometry(QtCore.QRect(10, 10, 131, 31))
         self.btn_outputPath.setObjectName("btn_outputPath")
         self.comboBox = QtWidgets.QComboBox(self.v1_widget)
-        self.comboBox.setGeometry(QtCore.QRect(590, 10, 181, 31))
+        self.comboBox.setGeometry(QtCore.QRect(1290, 10, 180, 30))
         self.comboBox.setObjectName("comboBox")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
@@ -75,9 +77,24 @@ class Ui_MainWindow(object):
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
+        self.label = QtWidgets.QLabel(self.v1_widget)
+        self.label.setGeometry(QtCore.QRect(430, 10, 141, 20))
+        font = QtGui.QFont()
+        font.setPointSize(8)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.horizontalSlider = QtWidgets.QSlider(self.v1_widget)
+        self.horizontalSlider.setGeometry(QtCore.QRect(430, 25, 141, 21))
+        self.horizontalSlider.setMouseTracking(False)
+        self.horizontalSlider.setSingleStep(50)
+        self.horizontalSlider.setPageStep(50)
+        self.horizontalSlider.setTracking(False)
+        self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.horizontalSlider.setTickPosition(QtWidgets.QSlider.TicksAbove)
+        self.horizontalSlider.setObjectName("horizontalSlider")
         self.verticalLayout_1.addWidget(self.v1_widget)
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(10, 70, 781, 431))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(10, 70, 1480, 780))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -87,7 +104,7 @@ class Ui_MainWindow(object):
 
         #Compute Features options
         self.groupBox_computeFeatures = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_computeFeatures.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_computeFeatures.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_computeFeatures.setObjectName("groupBox_computeFeatures")
         self.radioBtn_SIFT = QtWidgets.QRadioButton(self.groupBox_computeFeatures)
         self.radioBtn_SIFT.setGeometry(QtCore.QRect(20, 50, 112, 23))
@@ -139,7 +156,7 @@ class Ui_MainWindow(object):
 
         #Compute Matches options
         self.groupBox_computeMathes = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_computeMathes.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_computeMathes.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_computeMathes.setObjectName("groupBox_computeMathes")
         self.groupBox_computeMathes.setVisible(False)
         self.radioBtn_08 = QtWidgets.QRadioButton(self.groupBox_computeMathes)
@@ -204,7 +221,7 @@ class Ui_MainWindow(object):
         
         #Sequential Reconstruction Options
         self.groupBox_sequential = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_sequential.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_sequential.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_sequential.setObjectName("groupBox_sequential")
         self.groupBox_sequential.setVisible(False)
         self.radioBtn_ALL = QtWidgets.QRadioButton(self.groupBox_sequential)
@@ -236,7 +253,7 @@ class Ui_MainWindow(object):
 
         #MVG to MVS
         self.groupBox_MvgToMvs = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_MvgToMvs.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_MvgToMvs.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_MvgToMvs.setObjectName("groupBox_MvgToMvs")
         self.groupBox_MvgToMvs.setVisible(False)
         self.lbl_non = QtWidgets.QLabel(self.groupBox_MvgToMvs)
@@ -245,7 +262,7 @@ class Ui_MainWindow(object):
 
         #Densify Point Cloud
         self.groupBox_densifyPointCloud = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_densifyPointCloud.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_densifyPointCloud.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_densifyPointCloud.setObjectName("groupBox_densifyPointCloud")
         self.groupBox_densifyPointCloud.setVisible(False)
         self.ResolutionLevel = QtWidgets.QLabel(self.groupBox_densifyPointCloud)
@@ -268,7 +285,7 @@ class Ui_MainWindow(object):
 
         #Reconstruct Mesh
         self.groupBox_reconstructMesh = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_reconstructMesh.setGeometry(QtCore.QRect(590,10, 181, 411))
+        self.groupBox_reconstructMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_reconstructMesh.setObjectName("groupBox_reconstructMesh")
         self.groupBox_reconstructMesh.setVisible(False)
         self.radioBtn_minPoint_25f = QtWidgets.QRadioButton(self.groupBox_reconstructMesh)
@@ -287,7 +304,7 @@ class Ui_MainWindow(object):
 
         #Refine Mesh
         self.groupBox_refineMesh = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_refineMesh.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_refineMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_refineMesh.setObjectName("groupBox_refineMesh")
         self.groupBox_refineMesh.setVisible(False)
         self.ResolutionLevel_2 = QtWidgets.QLabel(self.groupBox_refineMesh)
@@ -330,7 +347,7 @@ class Ui_MainWindow(object):
 
         #Texture Mesh
         self.groupBox_textureMesh = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_textureMesh.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_textureMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_textureMesh.setObjectName("groupBox_textureMesh")
         self.groupBox_textureMesh.setVisible(False)
         self.TextureMesh = QtWidgets.QLabel(self.groupBox_textureMesh)
@@ -351,22 +368,32 @@ class Ui_MainWindow(object):
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_8)
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_9)
 
-    
+        #Tab layout
+        self.tabs = QtWidgets.QTabWidget(self.v2_widget)
+        self.tabs.setGeometry(QtCore.QRect(10, 10, 1250, 750))
+        self.tab1 = QWidget()
+        self.tab2 = QWidget()
+        self.tab3 = QWidget()
+        self.tab4 = QWidget()
+        self.tabs.addTab(self.tab1, "Point Cloud")
+        self.tabs.addTab(self.tab2, "Densify Point Cloud")
+        self.tabs.addTab(self.tab3, "Mesh")
+        self.tabs.addTab(self.tab4, "Texture")
+
         self.verticalLayout_2.addWidget(self.v2_widget)
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 499, 781, 51))
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 830, 1480, 50))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
-        #self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticafile_listlLayoutWidget_3)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.v3_widget = QtWidgets.QWidget(self.verticalLayoutWidget_3)
         self.v3_widget.setObjectName("v3_widget")
         self.btn_start = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_start.setGeometry(QtCore.QRect(648, 10, 121, 31))
+        self.btn_start.setGeometry(QtCore.QRect(1350, 10, 120, 30))
         self.btn_start.setObjectName("btn_start")
         self.btn_previous = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_previous.setGeometry(QtCore.QRect(510, 10, 131, 31))
+        self.btn_previous.setGeometry(QtCore.QRect(1220, 10, 120, 30))
         self.btn_previous.setObjectName("btn_previous")
         self.verticalLayout_3.addWidget(self.v3_widget)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -383,6 +410,8 @@ class Ui_MainWindow(object):
 
         #start 버튼 이벤트
         self.btn_start.clicked.connect(self.startPipline)
+        #slider 이벤트
+        self.horizontalSlider.valueChanged.connect(self.optionChecking)
         #comboBox 이벤트
         self.comboBox.currentIndexChanged.connect(lambda: self.comboBoxFunc(MyWindow))
         #output path Dialog
@@ -401,35 +430,26 @@ class Ui_MainWindow(object):
         self.ResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("refine", "--resolution-level"))
         self.MaxFaceAreaGroup.buttonClicked.connect(lambda: self.selectOptionFunc("refine", "--max-face-area"))
         self.TextureResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("texture", "--resolution-level"))
+    
+    def optionChecking(self):
+        if self.horizontalSlider.value() >= 0 and self.horizontalSlider.value() <= 25:
+            self.horizontalSlider.setValue = 0
+        elif self.horizontalSlider.value() > 25 and self.horizontalSlider.value() <= 50:
+            self.horizontalSlider.setValue = 50
+        elif self.horizontalSlider.value() > 50 and self.horizontalSlider.value() <= 100:
+            self.horizontalSlider.setValue = 100
 
     def startPipline(self):
         print ("1. Intrinsics analysis")
         pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
         pIntrisics.wait()
 
-        #====================================================================
-        # Features 옵션 설정
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
-
-        for op in option["features"]:
-            param.append(op)
-            param.append(option["features"][op])
-
         print ("2. Compute features")
-        pFeatures = subprocess.Popen( param )
+        pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-m", "SIFT"] )
         pFeatures.wait()
 
-        #====================================================================
-        # Matches 옵션 설정
-
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
-
-        for op in option["matches"]:
-            param.append(op)
-            param.append(option["matches"][op])
-
         print ("3. Compute matches")
-        pMatches = subprocess.Popen( param )
+        pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
         pMatches.wait()
 
         # Create the reconstruction if not present
@@ -441,12 +461,12 @@ class Ui_MainWindow(object):
         file_list = os.listdir(input_dir)
         if not os.path.exists(ChangeWhite_dir):
             os.mkdir(ChangeWhite_dir)
-        
+            
         for str in file_list:
-            path = input_dir + "/" + str
+            path = input_dir + str
             if "_mask" in str:
-                color_dir = input_dir + "/" + str[:-9] + ".jpg"
-                print(color_dir)
+                color_dir = input_dir + str[:-9] + ".jpg"
+                
                 mask = cv2.imread(path, 0)
                 img = cv2.imread(color_dir)
                 
@@ -473,22 +493,9 @@ class Ui_MainWindow(object):
                     cv2.imwrite(mask_png, weighted_img)
         
 
-        #====================================================================
-        # Sequential 옵션 설정
-
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
-
-        for op in option["seq"]:
-            param.append(op)
-            param.append(option["seq"][op])
-
-
         print ("4. Do Sequential/Incremental reconstruction")
-        pRecons = subprocess.Popen( param )
+        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir] )
         pRecons.wait()
-
-        #====================================================================
-        # 나머지
 
         print ("5. Colorize Structure")
         pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
@@ -507,7 +514,6 @@ class Ui_MainWindow(object):
         
         pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
         pRecons.wait()
-        #====================================================================
 
     def selectOptionFunc(self, pipNum, signal):
         if pipNum == "features":
@@ -550,20 +556,12 @@ class Ui_MainWindow(object):
             print(option["texture"])
 
             
+
+
+
     def outputDialogFunc(self, MyWindow):
-        global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
         #QFileDialog.getOpenFileName()
         output_dir = str(QFileDialog.getExistingDirectory(self.centralwidget))
-        ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
-        matches_dir = os.path.join(output_dir, "matches")
-        reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
-        Scene_dir = os.path.join(output_dir,"Scene")
-
-        print("!!"+output_dir)
-        # Create the ouput/matches folder if not present
-        if not os.path.exists(matches_dir):
-            os.mkdir(matches_dir)
-
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -578,6 +576,7 @@ class Ui_MainWindow(object):
         self.comboBox.setItemText(6, _translate("MainWindow", "Reconstruct Mesh"))
         self.comboBox.setItemText(7, _translate("MainWindow", "Refine Mesh"))
         self.comboBox.setItemText(8, _translate("MainWindow", "Texture Mesh"))
+        self.label.setText(_translate("MainWindow", " L                       M                     H"))
         self.groupBox_computeFeatures.setTitle(_translate("MainWindow", "Options"))
         self.radioBtn_SIFT.setText(_translate("MainWindow", "SIFT"))
         self.DescriberMethod.setText(_translate("MainWindow", "Describer Method ( -m )"))
@@ -767,6 +766,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.show()
 
 if __name__ == "__main__":
+    import sys
     app = QtWidgets.QApplication(sys.argv)
     #MainWindow = QtWidgets.QMainWindow()
     MainWindow = MyWindow()
