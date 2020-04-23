@@ -1,7 +1,0 @@
-. filter=lfs diff=lfs merge=lfs -text
-images filter=lfs diff=lfs merge=lfs -text
-scene_dense_mesh.ply filter=lfs diff=lfs merge=lfs -text
-scene_dense filter=lfs diff=lfs merge=lfs -text
-2.ply filter=lfs diff=lfs merge=lfs -text
-scene_dense.ply filter=lfs diff=lfs merge=lfs -text
-scene_undistorted_images filter=lfs diff=lfs merge=lfs -text
