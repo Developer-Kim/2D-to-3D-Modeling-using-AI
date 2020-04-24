@@ -18,6 +18,8 @@ import cv2
 from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QWindow
+from PyQt5.QtCore import Qt
 
 #option Dictionary 
 # ex option["features"]["-m"] = SIFT
@@ -259,6 +261,8 @@ class Ui_MainWindow(object):
         self.lbl_non = QtWidgets.QLabel(self.groupBox_MvgToMvs)
         self.lbl_non.setGeometry(QtCore.QRect(10, 30, 161, 17))
         self.lbl_non.setObjectName("lbl_non")
+        self.checkBox_MvgToMvs = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_MvgToMvs)
+        self.checkBox_MvgToMvs.setGeometry(QtCore.QRect(20,660, 131, 90))
 
         #Densify Point Cloud
         self.groupBox_densifyPointCloud = QtWidgets.QGroupBox(self.v2_widget)
@@ -282,7 +286,9 @@ class Ui_MainWindow(object):
         self.DensifyResolutionGroup.addButton(self.radioBtn_RL_1)
         self.DensifyResolutionGroup.addButton(self.radioBtn_RL_2)
         self.DensifyResolutionGroup.addButton(self.radioBtn_RL_3)
-
+        self.checkBox_Densify = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_densifyPointCloud)
+        self.checkBox_Densify.setGeometry(QtCore.QRect(20,660, 131, 90))
+    
         #Reconstruct Mesh
         self.groupBox_reconstructMesh = QtWidgets.QGroupBox(self.v2_widget)
         self.groupBox_reconstructMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
@@ -301,6 +307,9 @@ class Ui_MainWindow(object):
         self.MinPointGroup.setObjectName("MinPointGroup")   
         self.MinPointGroup.addButton(self.radioBtn_minPoint_25f)
         self.MinPointGroup.addButton(self.radioBtn_minPoint_6)
+        self.checkBox_ReconstructMesh = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_reconstructMesh)
+        self.checkBox_ReconstructMesh.setGeometry(QtCore.QRect(20,660, 131, 90))
+
 
         #Refine Mesh
         self.groupBox_refineMesh = QtWidgets.QGroupBox(self.v2_widget)
@@ -344,6 +353,8 @@ class Ui_MainWindow(object):
         self.MeshFile = QtWidgets.QLabel(self.groupBox_refineMesh)
         self.MeshFile.setGeometry(QtCore.QRect(10, 240, 161, 31))
         self.MeshFile.setObjectName("MeshFile")
+        self.checkBox_RefineMesh = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_refineMesh)
+        self.checkBox_RefineMesh.setGeometry(QtCore.QRect(20,660, 131, 90))
 
         #Texture Mesh
         self.groupBox_textureMesh = QtWidgets.QGroupBox(self.v2_widget)
@@ -367,14 +378,16 @@ class Ui_MainWindow(object):
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_7)
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_8)
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_9)
+        self.checkBox_TextureMesh = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_textureMesh)
+        self.checkBox_TextureMesh.setGeometry(QtCore.QRect(20,660, 131, 90))
 
         #Tab layout
         self.tabs = QtWidgets.QTabWidget(self.v2_widget)
         self.tabs.setGeometry(QtCore.QRect(10, 10, 1250, 750))
-        self.tab1 = QWidget()
-        self.tab2 = QWidget()
-        self.tab3 = QWidget()
-        self.tab4 = QWidget()
+        self.tab1 = QtWidgets.QWidget()
+        self.tab2 = QtWidgets.QWidget()
+        self.tab3 = QtWidgets.QWidget()
+        self.tab4 = QtWidgets.QWidget()
         self.tabs.addTab(self.tab1, "Point Cloud")
         self.tabs.addTab(self.tab2, "Densify Point Cloud")
         self.tabs.addTab(self.tab3, "Mesh")
@@ -408,8 +421,16 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        #Disabled checkbox 이벤트
+        self.checkBox_MvgToMvs.stateChanged.connect(lambda: self.piplineDisabled(4))
+        self.checkBox_Densify.stateChanged.connect(lambda: self.piplineDisabled(5))
+        self.checkBox_ReconstructMesh.stateChanged.connect(lambda: self.piplineDisabled(6))
+        self.checkBox_RefineMesh.stateChanged.connect(lambda: self.piplineDisabled(7))
+        #self.checkBox_TextureMesh.stateChanged.connect(lambda: self.piplineDisabled(8))
         #start 버튼 이벤트
         self.btn_start.clicked.connect(self.startPipline)
+        #previous 버튼 이벤트
+        self.btn_previous.clicked.connect(lambda: self.getPlyContainer(MainWindow))
         #slider 이벤트
         self.horizontalSlider.valueChanged.connect(self.optionChecking)
         #comboBox 이벤트
@@ -443,6 +464,81 @@ class Ui_MainWindow(object):
         self.radioBtn_MaxFace_16.setChecked(True)
         self.radioBtn_RL_9.setChecked(True)
 
+    def piplineDisabled(self, currentIndex):
+        if currentIndex == 4:
+            if self.checkBox_MvgToMvs.isChecked() == True:
+                self.checkBox_Densify.setChecked(True)
+                self.checkBox_ReconstructMesh.setChecked(True)
+                self.checkBox_RefineMesh.setChecked(True)
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_densifyPointCloud.setEnabled(False)
+                self.groupBox_reconstructMesh.setEnabled(False)
+                self.groupBox_refineMesh.setEnabled(False)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_densifyPointCloud.update()
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_MvgToMvs.isChecked() == False:
+                self.checkBox_Densify.setChecked(False)
+                self.checkBox_ReconstructMesh.setChecked(False)
+                self.checkBox_RefineMesh.setChecked(False)
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_densifyPointCloud.setEnabled(True)
+                self.groupBox_reconstructMesh.setEnabled(True)
+                self.groupBox_refineMesh.setEnabled(True)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_densifyPointCloud.update()
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+        elif currentIndex == 5:
+            if self.checkBox_Densify.isChecked() == True:
+                self.checkBox_ReconstructMesh.setChecked(True)
+                self.checkBox_RefineMesh.setChecked(True)
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_reconstructMesh.setEnabled(False)
+                self.groupBox_refineMesh.setEnabled(False)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_Densify.isChecked() == False:
+                self.checkBox_ReconstructMesh.setChecked(False)
+                self.checkBox_RefineMesh.setChecked(False)
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_reconstructMesh.setEnabled(True)
+                self.groupBox_refineMesh.setEnabled(True)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+        elif currentIndex == 6:
+            if self.checkBox_ReconstructMesh.isChecked() == True:
+                self.checkBox_RefineMesh.setChecked(True)
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_refineMesh.setEnabled(False)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_ReconstructMesh.isChecked() == False:
+                self.checkBox_RefineMesh.setChecked(False)
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_refineMesh.setEnabled(True)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+        elif currentIndex == 7:
+            if self.checkBox_RefineMesh.isChecked() == True:
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_ReconstructMesh.isChecked() == False:
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_textureMesh.update()
+            
+
     def optionChecking(self):
         #LOW Level로 옵션 초기화
         if self.horizontalSlider.value() >= 0 and self.horizontalSlider.value() <= 25:
@@ -458,6 +554,7 @@ class Ui_MainWindow(object):
             self.radioBtn_minPoint_25f.setChecked(True)
             self.radioBtn_RL_6.setChecked(True)
             self.radioBtn_RL_9.setChecked(True)
+
         #MEDIUM Level로 옵션 초기화
         elif self.horizontalSlider.value() > 25 and self.horizontalSlider.value() <= 50:
             self.horizontalSlider.setValue = 50
@@ -476,6 +573,7 @@ class Ui_MainWindow(object):
         #HIGH Level로 옵션 초기화
         elif self.horizontalSlider.value() > 50 and self.horizontalSlider.value() <= 100:
             self.horizontalSlider.setValue = 100
+
             self.radioBtn_SIFT.setChecked(True)
             self.radioBtn_0.setChecked(True)
             self.radioBtn_ULTRA.setChecked(True)
@@ -487,6 +585,32 @@ class Ui_MainWindow(object):
             self.radioBtn_RL_4.setChecked(True)
             self.radioBtn_RL_7.setChecked(True)
 
+    def getPlyContainer(self, MyWindow):
+        #ply viewer 생성  & ply 파일 read
+        data = plyfile.PlyData.read('scene_dense.ply')['vertex']
+        xyz = np.c_[data['x'], data['y'], data['z']]
+        rgb = np.c_[data['red'], data['green'], data['blue']]
+        self.v = pptk.viewer(xyz)
+        self.v.set(point_size=0.0005)
+        self.v.attributes(rgb / 255.)
+
+        #터미널에서 viewer로 열린 window 잡아서 tab에 contain
+        viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
+        print(viewerWinID_str)
+        window = QWindow.fromWinId(int(viewerWinID_str, 16))
+        window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
+        self.tab1.layout = QtWidgets.QVBoxLayout()
+        self.tab1.layout.addWidget(MyWindow.windowcontainer)
+        self.tab1.setLayout(self.tab1.layout)
+        self.tabs.addWidget()
+        #self.tabs.update()
+        #self.tab1.layout.update()
+
+        #tabs rewrite
+        
+        #MyWindow.update()
+        
 
     def startPipline(self):
         print ("1. Intrinsics analysis")
@@ -800,12 +924,7 @@ class Ui_MainWindow(object):
 class MyWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        #data = plyfile.PlyData.read('scene_dense.ply')['vertex']
-        #xyz = np.c_[data['x'], data['y'], data['z']]
-        #rgb = np.c_[data['red'], data['green'], data['blue']]
-        #self.v = pptk.viewer(xyz)
-        #self.v.set(point_size=0.0005)
-        #self.v.attributes(rgb / 255.)
+        
 
         self.ui = Ui_MainWindow()
         self.startSetupUI()
