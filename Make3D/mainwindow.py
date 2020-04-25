@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
 from PyQt5.QtCore import Qt
 
+
 #option Dictionary 
 # ex option["features"]["-m"] = SIFT
 option = dict()
@@ -49,6 +50,56 @@ Scene_dir = os.path.join(output_dir,"Scene")
 # Create the ouput/matches folder if not present
 if not os.path.exists(matches_dir):
   os.mkdir(matches_dir)
+
+class ImageListDialog(QDialog):
+    def __init__(self, signal):
+        super().__init__()
+        self.path = signal
+        self.setupUI()
+
+    def setupUI(self):
+        self.setGeometry(200, 200, 800, 800)
+        if self.path == "f":
+            self.setWindowTitle("Feature Image List")
+        elif self.path == "m":
+            self.setWindowTitle("Match Image List")
+        self.centeralWidget = QtWidgets.QWidget(self)
+
+        #self.listview = QtWidgets.QListView(self.centeralWidget)
+        self.listview = QtWidgets.QListWidget(self.centeralWidget)
+        self.listview.setGeometry(QtCore.QRect(10, 10, 180, 780))
+        self.listview.itemClicked.connect(self.openImageFile)
+
+        self.imageLabel = QtWidgets.QLabel(self.centeralWidget)
+        self.imageLabel.setGeometry(QtCore.QRect(200, 10, 580, 780))
+
+        if self.path == "f":
+            self.path = os.path.abspath('./featureImages')
+        elif self.path == "m":
+            self.path = os.path.abspath('./matchImages')
+
+
+        img_list = []
+        # r=root, d=directories, f = files
+        for r, d, f in os.walk(self.path):
+            for file in f:
+                if '.JPG' in file:
+                    #img_list.append(os.path.join(r, file))
+                    img_list.append(file)
+
+        for f in img_list:
+            self.listview.addItem(f)      
+
+    def openImageFile(self):
+        #print(self.listview.currentItem().text())
+        img = os.path.join(self.path, self.listview.currentItem().text())
+
+        pixmap = QtGui.QPixmap()
+        pixmap.load(img)
+        pixmap = pixmap.scaled(580, 780)
+        self.imageLabel.setPixmap(pixmap)
+
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -409,6 +460,14 @@ class Ui_MainWindow(object):
         self.btn_previous.setGeometry(QtCore.QRect(1220, 10, 120, 30))
         self.btn_previous.setObjectName("btn_previous")
         self.verticalLayout_3.addWidget(self.v3_widget)
+        self.btn_fImage = QtWidgets.QPushButton(self.v3_widget)
+        self.btn_fImage.setGeometry(QtCore.QRect(10, 10, 120, 30))
+        self.btn_fImage.setObjectName("btn_fImage")
+        self.verticalLayout_3.addWidget(self.v3_widget)
+        self.btn_mImage = QtWidgets.QPushButton(self.v3_widget)
+        self.btn_mImage.setGeometry(QtCore.QRect(140, 10, 120, 30))
+        self.btn_mImage.setObjectName("btn_fImage")
+        self.verticalLayout_3.addWidget(self.v3_widget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
@@ -427,6 +486,7 @@ class Ui_MainWindow(object):
         self.checkBox_ReconstructMesh.stateChanged.connect(lambda: self.piplineDisabled(6))
         self.checkBox_RefineMesh.stateChanged.connect(lambda: self.piplineDisabled(7))
         #self.checkBox_TextureMesh.stateChanged.connect(lambda: self.piplineDisabled(8))
+
         #start 버튼 이벤트
         self.btn_start.clicked.connect(self.startPipline)
         #previous 버튼 이벤트
@@ -435,6 +495,11 @@ class Ui_MainWindow(object):
         self.horizontalSlider.valueChanged.connect(self.optionChecking)
         #comboBox 이벤트
         self.comboBox.currentIndexChanged.connect(lambda: self.comboBoxFunc(MyWindow))
+
+        #feature image Dialog
+        self.btn_fImage.clicked.connect(lambda: self.openImageDialog("f"))
+        #match image Dialog
+        self.btn_mImage.clicked.connect(lambda: self.openImageDialog("m"))
         #output path Dialog
         self.btn_outputPath.clicked.connect(lambda:self.outputDialogFunc(MyWindow))
         #radio button 이벤트
@@ -463,6 +528,17 @@ class Ui_MainWindow(object):
         self.radioBtn_RL_6.setChecked(True)
         self.radioBtn_MaxFace_16.setChecked(True)
         self.radioBtn_RL_9.setChecked(True)
+
+    def openImageDialog(self, signal):
+
+        if signal == "f":
+            print("open feature image Dialog")
+            f_dlg = ImageListDialog("f")
+            f_dlg.exec_()
+        elif signal == "m":
+            print("open match image Dialog")
+            m_dlg = ImageListDialog("m")
+            m_dlg.exec_()
 
     def piplineDisabled(self, currentIndex):
         if currentIndex == 4:
@@ -603,12 +679,8 @@ class Ui_MainWindow(object):
         self.tab1.layout = QtWidgets.QVBoxLayout()
         self.tab1.layout.addWidget(MyWindow.windowcontainer)
         self.tab1.setLayout(self.tab1.layout)
-        self.tabs.addWidget()
+        self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         #self.tabs.update()
-        #self.tab1.layout.update()
-
-        #tabs rewrite
-        
         #MyWindow.update()
         
 
@@ -728,10 +800,6 @@ class Ui_MainWindow(object):
                 option[pipNum][signal] = self.TextureResolutionGroup.checkedButton().text()
             print(option["texture"])
 
-            
-
-
-
     def outputDialogFunc(self, MyWindow):
         #QFileDialog.getOpenFileName()
         output_dir = str(QFileDialog.getExistingDirectory(self.centralwidget))
@@ -823,6 +891,12 @@ class Ui_MainWindow(object):
         self.radioBtn_RL_9.setText(_translate("MainWindow", "3"))
         self.btn_start.setText(_translate("MainWindow", "Start"))
         self.btn_previous.setText(_translate("MainWindow", "Previous"))
+        self.btn_fImage.setIcon(QtGui.QIcon('imageIcon.png'))
+        self.btn_fImage.setIconSize(QtCore.QSize(24,24))
+        self.btn_fImage.setText(_translate("MainWindow", " Features"))
+        self.btn_mImage.setIcon(QtGui.QIcon('imageIcon.png'))
+        self.btn_mImage.setIconSize(QtCore.QSize(24,24))
+        self.btn_mImage.setText(_translate("MainWindow", " Matches"))
 
     def comboBoxFunc(self, MyWindow):
         #Compute Features
