@@ -33,6 +33,7 @@ option["mesh"] = dict()
 option["refine"] = dict()
 option["texture"] = dict()
 
+imgNum = 0
 
 program_dir = os.getcwd()
 input_dir = os.path.join(program_dir, "Image")
@@ -444,6 +445,12 @@ class Ui_MainWindow(object):
         self.tabs.addTab(self.tab3, "Mesh")
         self.tabs.addTab(self.tab4, "Texture")
 
+        #capture button
+        self.btn_capture = QtWidgets.QPushButton(self.v2_widget)
+        self.btn_capture.setGeometry(QtCore.QRect(1230, 0, 30, 30))
+        self.btn_capture.setObjectName("btn_capture")
+        self.btn_capture.setEnabled(False)
+
         self.verticalLayout_2.addWidget(self.v2_widget)
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 830, 1480, 50))
@@ -487,6 +494,8 @@ class Ui_MainWindow(object):
         self.checkBox_RefineMesh.stateChanged.connect(lambda: self.piplineDisabled(7))
         #self.checkBox_TextureMesh.stateChanged.connect(lambda: self.piplineDisabled(8))
 
+        #capture 버튼 이벤트
+        self.btn_capture.clicked.connect(self.captureFunc)
         #start 버튼 이벤트
         self.btn_start.clicked.connect(self.startPipline)
         #previous 버튼 이벤트
@@ -528,6 +537,12 @@ class Ui_MainWindow(object):
         self.radioBtn_RL_6.setChecked(True)
         self.radioBtn_MaxFace_16.setChecked(True)
         self.radioBtn_RL_9.setChecked(True)
+
+    def captureFunc(self):
+        global imgNum
+        self.v.capture('screeshot'+ str(imgNum) +'.png')
+        imgNum = imgNum + 1
+        print("captured")
 
     def openImageDialog(self, signal):
 
@@ -669,6 +684,9 @@ class Ui_MainWindow(object):
         self.v = pptk.viewer(xyz)
         self.v.set(point_size=0.0005)
         self.v.attributes(rgb / 255.)
+        
+        #캡쳐 버튼 활성화
+        self.btn_capture.setEnabled(True)
 
         #터미널에서 viewer로 열린 window 잡아서 tab에 contain
         viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
@@ -889,6 +907,8 @@ class Ui_MainWindow(object):
         self.radioBtn_RL_7.setText(_translate("MainWindow", "1"))
         self.radioBtn_RL_8.setText(_translate("MainWindow", "2"))
         self.radioBtn_RL_9.setText(_translate("MainWindow", "3"))
+        self.btn_capture.setIcon(QtGui.QIcon('capture.png'))
+        self.btn_capture.setIconSize(QtCore.QSize(24,24))
         self.btn_start.setText(_translate("MainWindow", "Start"))
         self.btn_previous.setText(_translate("MainWindow", "Previous"))
         self.btn_fImage.setIcon(QtGui.QIcon('imageIcon.png'))
