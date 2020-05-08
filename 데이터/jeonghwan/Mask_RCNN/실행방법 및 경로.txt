@@ -1,0 +1,12 @@
+Mask_RCNN 실행방법 및 경로
+
+
+<실행방법>
+python3 demo_car.py
+
+
+<경로>
+car 폴더 : (경로)/Mask_RCNN/samples
+demo_car.py : (경로)/Mask_RCNN/samples
+images 폴더 : (경로)/Mask_RCNN
+mask_rcnn_car_0030.h5 : (경로)/Mask_RCNN
