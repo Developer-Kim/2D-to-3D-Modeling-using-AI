@@ -464,17 +464,17 @@ class Ui_MainWindow(object):
         self.btn_start.setGeometry(QtCore.QRect(1350, 10, 120, 30))
         self.btn_start.setObjectName("btn_start")
         self.btn_previous = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_previous.setGeometry(QtCore.QRect(1220, 10, 120, 30))
+        self.btn_previous.setGeometry(QtCore.QRect(1240, 10, 100, 30))
         self.btn_previous.setObjectName("btn_previous")
         self.verticalLayout_3.addWidget(self.v3_widget)
-        self.btn_fImage = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_fImage.setGeometry(QtCore.QRect(10, 10, 120, 30))
+        self.btn_fImage = QtWidgets.QPushButton(self.v2_widget)
+        self.btn_fImage.setGeometry(QtCore.QRect(970, 0, 120, 30))
         self.btn_fImage.setObjectName("btn_fImage")
-        self.verticalLayout_3.addWidget(self.v3_widget)
-        self.btn_mImage = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_mImage.setGeometry(QtCore.QRect(140, 10, 120, 30))
+        #self.verticalLayout_3.addWidget(self.v3_widget)
+        self.btn_mImage = QtWidgets.QPushButton(self.v2_widget)
+        self.btn_mImage.setGeometry(QtCore.QRect(1100, 0, 120, 30))
         self.btn_mImage.setObjectName("btn_fImage")
-        self.verticalLayout_3.addWidget(self.v3_widget)
+        #self.verticalLayout_3.addWidget(self.v3_widget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
@@ -697,7 +697,9 @@ class Ui_MainWindow(object):
         self.tab1.layout = QtWidgets.QVBoxLayout()
         self.tab1.layout.addWidget(MyWindow.windowcontainer)
         self.tab1.setLayout(self.tab1.layout)
-        self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
+        #sys.stdout.flush()
+        self.update()
+        # self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         #self.tabs.update()
         #MyWindow.update()
         
@@ -711,11 +713,14 @@ class Ui_MainWindow(object):
         pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-m", "SIFT"] )
         pFeatures.wait()
 
+        pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"),  "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", "SIFT"] )
+        pFeatures.wait()
+
         print ("3. Compute matches")
         pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
         pMatches.wait()
 
-        # Create the reconstruction if not present
+        # Create the reconstruction if not pressent
         if not os.path.exists(reconstruction_dir):
             os.mkdir(reconstruction_dir)
         
