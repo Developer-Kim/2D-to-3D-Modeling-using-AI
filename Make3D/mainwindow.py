@@ -782,29 +782,22 @@ class Ui_MainWindow(object):
         
 
     def startPipline(self):
-        #Thread 생성
-
-
         print ("1. Intrinsics analysis")
         pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
         pIntrisics.wait()
+        
+        #====================================================================
+        # Features 옵션 설정
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
+
+        for op in option["features"]:
+            param.append(op)
+            param.append(option["features"][op])
 
         print ("2. Compute features")
-        pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-m", "SIFT"] )
+        pFeatures = subprocess.Popen( param )
         pFeatures.wait()
-
-<<<<<<< HEAD
-        #====================================================================
-        # 특징점 캡쳐
-        pFeature_dir = os.path.join(output_dir, "FeatureImage")
-        if not os.path.exists(pFeature_dir):
-            os.mkdir(pFeature_dir)
-
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
-
-        pFeatures_Capture = subprocess.Popen( param )
-        pFeatures_Capture.wait()
-
+        
         #====================================================================
         # Matches 옵션 설정
 
@@ -813,16 +806,11 @@ class Ui_MainWindow(object):
         for op in option["matches"]:
             param.append(op)
             param.append(option["matches"][op])
-=======
-        pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"),  "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", "SIFT"] )
-        pFeatures.wait()
->>>>>>> c6ef2fe749fcc4aa04c8e96ac69963daad4d7947
 
         print ("3. Compute matches")
         pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
         pMatches.wait()
 
-<<<<<<< HEAD
         #====================================================================
         # 매칭점 캡쳐
         pMatches_dir = os.path.join(output_dir, "MatchImage")
@@ -835,9 +823,6 @@ class Ui_MainWindow(object):
         pMatches_Capture.wait()
 
         # Create the reconstruction if not present
-=======
-        # Create the reconstruction if not pressent
->>>>>>> c6ef2fe749fcc4aa04c8e96ac69963daad4d7947
         if not os.path.exists(reconstruction_dir):
             os.mkdir(reconstruction_dir)
 
@@ -877,9 +862,22 @@ class Ui_MainWindow(object):
                     cv2.imwrite(mask_png, weighted_img)
         
 
+       #====================================================================
+        # Sequential 옵션 설정
+        
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
+
+        for op in option["seq"]:
+            param.append(op)
+            param.append(option["seq"][op])
+
+
         print ("4. Do Sequential/Incremental reconstruction")
-        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir] )
+        pRecons = subprocess.Popen( param )
         pRecons.wait()
+
+        #====================================================================
+        # 나머지
 
         print ("5. Colorize Structure")
         pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
@@ -898,6 +896,7 @@ class Ui_MainWindow(object):
         
         pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
         pRecons.wait()
+        #====================================================================
 
     def selectOptionFunc(self, pipNum, signal):
         if pipNum == "features":
