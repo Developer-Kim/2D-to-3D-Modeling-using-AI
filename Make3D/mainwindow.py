@@ -9,15 +9,21 @@
 import os
 import subprocess
 import sys
-#import pptk
+import pptk
 import math
 import string
 import numpy as np
-#import plyfile
+import plyfile
 import cv2
-#from wmctrl import Window
+from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QWindow
+from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QWaitCondition
+from PyQt5.QtCore import QMutex
+from PyQt5.QtCore import pyqtSignal
 
 #option Dictionary 
 # ex option["features"]["-m"] = SIFT
@@ -30,30 +36,150 @@ option["mesh"] = dict()
 option["refine"] = dict()
 option["texture"] = dict()
 
+imgNum = 0
 
 program_dir = os.getcwd()
 input_dir = os.path.join(program_dir, "Image")
-ChangeWhite_dir = ""
-matches_dir = ""
-reconstruction_dir = ""
-Scene_dir = ""
 output_dir = ""
 
 OPENMVG_SFM_BIN = os.path.join(program_dir, "Binary")
 CAMERA_SENSOR_WIDTH_DIRECTORY = os.path.join(program_dir, "Camera")
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
 
+ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
+matches_dir = os.path.join(output_dir, "matches")
+reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
+Scene_dir = os.path.join(output_dir,"Scene")
 
+class Thread(QThread):
+    # 사용자 정의 시그널 선언
+    change_value = pyqtSignal(int)
+    change_label = pyqtSignal(str)
+
+    def __init__(self):
+        QThread.__init__(self)
+        self.cond = QWaitCondition()
+        self.mutex = QMutex()
+        self.cnt = 0
+        self._status = True
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        textfile = open('progress.txt')
+        while True:
+            self.mutex.lock()
+
+            if not self._status:
+                self.cond.wait(self.mutex)
+
+            while True:
+                self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
+
+                step = textfile.readline()[:-1]
+                percent = textfile.readline()[:-1]
+                
+                if not step:
+                    continue
+                elif step == "features":
+                    self.change_label.emit("Compute Features (1/8)")
+                elif step == "matches":
+                    self.change_label.emit("Compute Matches (2/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (3/8)")
+                # elif step == "matches":thread
+                #     self.change_label.emit("Compute Matches (4/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (5/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (6/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (7/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (8/8)")
+
+                print(step)
+                print(percent)
+
+                if 100 == int(percent):
+                    percent = 0
+                    #break
+                self.change_value.emit(int(percent))
+                self.mutex.unlock()
+            
+
+    def toggle_status(self):
+        self._status = not self._status
+        if self._status:
+            self.cond.wakeAll()
+
+    @property
+    def status(self):
+        return self._status
+
+
+# Create the ouput/matches folder if not present
+if not os.path.exists(matches_dir):
+  os.mkdir(matches_dir)
+
+class ImageListDialog(QDialog):
+    def __init__(self, signal):
+        super().__init__()
+        self.path = signal
+        self.setupUI()
+
+    def setupUI(self):
+        self.setGeometry(200, 200, 800, 800)
+        if self.path == "f":
+            self.setWindowTitle("Feature Image List")
+        elif self.path == "m":
+            self.setWindowTitle("Match Image List")
+        self.centeralWidget = QtWidgets.QWidget(self)
+
+        #self.listview = QtWidgets.QListView(self.centeralWidget)
+        self.listview = QtWidgets.QListWidget(self.centeralWidget)
+        self.listview.setGeometry(QtCore.QRect(10, 10, 180, 780))
+        self.listview.itemClicked.connect(self.openImageFile)
+
+        self.imageLabel = QtWidgets.QLabel(self.centeralWidget)
+        self.imageLabel.setGeometry(QtCore.QRect(200, 10, 580, 780))
+
+        if self.path == "f":
+            self.path = os.path.abspath('./featureImages')
+        elif self.path == "m":
+            self.path = os.path.abspath('./matchImages')
+
+
+        img_list = []
+        # r=root, d=directories, f = files
+        for r, d, f in os.walk(self.path):
+            for file in f:
+                if '.JPG' in file:
+                    #img_list.append(os.path.join(r, file))
+                    img_list.append(file)
+
+        for f in img_list:
+            self.listview.addItem(f)      
+
+    def openImageFile(self):
+        #print(self.listview.currentItem().text())
+        img = os.path.join(self.path, self.listview.currentItem().text())
+
+        pixmap = QtGui.QPixmap()
+        pixmap.load(img)
+        pixmap = pixmap.scaled(580, 780)
+        self.imageLabel.setPixmap(pixmap)
 
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(1500, 900)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 20, 781, 51))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 20, 1480, 50))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout_1 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout_1.setContentsMargins(0, 0, 0, 0)
@@ -64,7 +190,7 @@ class Ui_MainWindow(object):
         self.btn_outputPath.setGeometry(QtCore.QRect(10, 10, 131, 31))
         self.btn_outputPath.setObjectName("btn_outputPath")
         self.comboBox = QtWidgets.QComboBox(self.v1_widget)
-        self.comboBox.setGeometry(QtCore.QRect(590, 10, 181, 31))
+        self.comboBox.setGeometry(QtCore.QRect(1290, 10, 180, 30))
         self.comboBox.setObjectName("comboBox")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
@@ -75,9 +201,24 @@ class Ui_MainWindow(object):
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
+        self.label = QtWidgets.QLabel(self.v1_widget)
+        self.label.setGeometry(QtCore.QRect(1120, 10, 141, 20))
+        font = QtGui.QFont()
+        font.setPointSize(8)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.horizontalSlider = QtWidgets.QSlider(self.v1_widget)
+        self.horizontalSlider.setGeometry(QtCore.QRect(1120, 25, 141, 21))
+        self.horizontalSlider.setMouseTracking(False)
+        self.horizontalSlider.setSingleStep(50)
+        self.horizontalSlider.setPageStep(50)
+        self.horizontalSlider.setTracking(False)
+        self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.horizontalSlider.setTickPosition(QtWidgets.QSlider.TicksAbove)
+        self.horizontalSlider.setObjectName("horizontalSlider")
         self.verticalLayout_1.addWidget(self.v1_widget)
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(10, 70, 781, 431))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(10, 70, 1480, 780))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -87,7 +228,7 @@ class Ui_MainWindow(object):
 
         #Compute Features options
         self.groupBox_computeFeatures = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_computeFeatures.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_computeFeatures.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_computeFeatures.setObjectName("groupBox_computeFeatures")
         self.radioBtn_SIFT = QtWidgets.QRadioButton(self.groupBox_computeFeatures)
         self.radioBtn_SIFT.setGeometry(QtCore.QRect(20, 50, 112, 23))
@@ -139,7 +280,7 @@ class Ui_MainWindow(object):
 
         #Compute Matches options
         self.groupBox_computeMathes = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_computeMathes.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_computeMathes.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_computeMathes.setObjectName("groupBox_computeMathes")
         self.groupBox_computeMathes.setVisible(False)
         self.radioBtn_08 = QtWidgets.QRadioButton(self.groupBox_computeMathes)
@@ -204,7 +345,7 @@ class Ui_MainWindow(object):
         
         #Sequential Reconstruction Options
         self.groupBox_sequential = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_sequential.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_sequential.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_sequential.setObjectName("groupBox_sequential")
         self.groupBox_sequential.setVisible(False)
         self.radioBtn_ALL = QtWidgets.QRadioButton(self.groupBox_sequential)
@@ -236,16 +377,18 @@ class Ui_MainWindow(object):
 
         #MVG to MVS
         self.groupBox_MvgToMvs = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_MvgToMvs.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_MvgToMvs.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_MvgToMvs.setObjectName("groupBox_MvgToMvs")
         self.groupBox_MvgToMvs.setVisible(False)
         self.lbl_non = QtWidgets.QLabel(self.groupBox_MvgToMvs)
         self.lbl_non.setGeometry(QtCore.QRect(10, 30, 161, 17))
         self.lbl_non.setObjectName("lbl_non")
+        self.checkBox_MvgToMvs = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_MvgToMvs)
+        self.checkBox_MvgToMvs.setGeometry(QtCore.QRect(20,660, 131, 90))
 
         #Densify Point Cloud
         self.groupBox_densifyPointCloud = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_densifyPointCloud.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_densifyPointCloud.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_densifyPointCloud.setObjectName("groupBox_densifyPointCloud")
         self.groupBox_densifyPointCloud.setVisible(False)
         self.ResolutionLevel = QtWidgets.QLabel(self.groupBox_densifyPointCloud)
@@ -265,10 +408,12 @@ class Ui_MainWindow(object):
         self.DensifyResolutionGroup.addButton(self.radioBtn_RL_1)
         self.DensifyResolutionGroup.addButton(self.radioBtn_RL_2)
         self.DensifyResolutionGroup.addButton(self.radioBtn_RL_3)
-
+        self.checkBox_Densify = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_densifyPointCloud)
+        self.checkBox_Densify.setGeometry(QtCore.QRect(20,660, 131, 90))
+    
         #Reconstruct Mesh
         self.groupBox_reconstructMesh = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_reconstructMesh.setGeometry(QtCore.QRect(590,10, 181, 411))
+        self.groupBox_reconstructMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_reconstructMesh.setObjectName("groupBox_reconstructMesh")
         self.groupBox_reconstructMesh.setVisible(False)
         self.radioBtn_minPoint_25f = QtWidgets.QRadioButton(self.groupBox_reconstructMesh)
@@ -284,10 +429,13 @@ class Ui_MainWindow(object):
         self.MinPointGroup.setObjectName("MinPointGroup")   
         self.MinPointGroup.addButton(self.radioBtn_minPoint_25f)
         self.MinPointGroup.addButton(self.radioBtn_minPoint_6)
+        self.checkBox_ReconstructMesh = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_reconstructMesh)
+        self.checkBox_ReconstructMesh.setGeometry(QtCore.QRect(20,660, 131, 90))
+
 
         #Refine Mesh
         self.groupBox_refineMesh = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_refineMesh.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_refineMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_refineMesh.setObjectName("groupBox_refineMesh")
         self.groupBox_refineMesh.setVisible(False)
         self.ResolutionLevel_2 = QtWidgets.QLabel(self.groupBox_refineMesh)
@@ -327,10 +475,12 @@ class Ui_MainWindow(object):
         self.MeshFile = QtWidgets.QLabel(self.groupBox_refineMesh)
         self.MeshFile.setGeometry(QtCore.QRect(10, 240, 161, 31))
         self.MeshFile.setObjectName("MeshFile")
+        self.checkBox_RefineMesh = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_refineMesh)
+        self.checkBox_RefineMesh.setGeometry(QtCore.QRect(20,660, 131, 90))
 
         #Texture Mesh
         self.groupBox_textureMesh = QtWidgets.QGroupBox(self.v2_widget)
-        self.groupBox_textureMesh.setGeometry(QtCore.QRect(590, 10, 181, 411))
+        self.groupBox_textureMesh.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_textureMesh.setObjectName("groupBox_textureMesh")
         self.groupBox_textureMesh.setVisible(False)
         self.TextureMesh = QtWidgets.QLabel(self.groupBox_textureMesh)
@@ -350,25 +500,54 @@ class Ui_MainWindow(object):
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_7)
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_8)
         self.TextureResolutionGroup.addButton(self.radioBtn_RL_9)
+        self.checkBox_TextureMesh = QtWidgets.QCheckBox("Disabled\n(이후 모든 과정을\n비활성화 합니다.)", self.groupBox_textureMesh)
+        self.checkBox_TextureMesh.setGeometry(QtCore.QRect(20,660, 131, 90))
 
-    
+        #Tab layout
+        self.tabs = QtWidgets.QTabWidget(self.v2_widget)
+        self.tabs.setGeometry(QtCore.QRect(10, 10, 1250, 750))
+        self.tab1 = QtWidgets.QWidget()
+        self.tab2 = QtWidgets.QWidget()
+        self.tab3 = QtWidgets.QWidget()
+        self.tab4 = QtWidgets.QWidget()
+        self.tabs.addTab(self.tab1, "Point Cloud")
+        self.tabs.addTab(self.tab2, "Densify Point Cloud")
+        self.tabs.addTab(self.tab3, "Mesh")
+        self.tabs.addTab(self.tab4, "Texture")
+
+        #capture button
+        self.btn_capture = QtWidgets.QPushButton(self.v2_widget)
+        self.btn_capture.setGeometry(QtCore.QRect(1230, 0, 30, 30))
+        self.btn_capture.setObjectName("btn_capture")
+        self.btn_capture.setEnabled(False)
+
         self.verticalLayout_2.addWidget(self.v2_widget)
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 499, 781, 51))
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(10, 830, 1480, 50))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
-        #self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticafile_listlLayoutWidget_3)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.v3_widget = QtWidgets.QWidget(self.verticalLayoutWidget_3)
         self.v3_widget.setObjectName("v3_widget")
+        self.pgsb = QtWidgets.QProgressBar(self.v3_widget)
+        self.pgsb.setGeometry(QtCore.QRect(10,15, 1250, 25))
+        self.pgsb.setObjectName("pgsb")
         self.btn_start = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_start.setGeometry(QtCore.QRect(648, 10, 121, 31))
+        self.btn_start.setGeometry(QtCore.QRect(1350, 10, 120, 30))
         self.btn_start.setObjectName("btn_start")
         self.btn_previous = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_previous.setGeometry(QtCore.QRect(510, 10, 131, 31))
+        self.btn_previous.setGeometry(QtCore.QRect(1270, 10, 70, 30))
         self.btn_previous.setObjectName("btn_previous")
         self.verticalLayout_3.addWidget(self.v3_widget)
+        self.btn_fImage = QtWidgets.QPushButton(self.v2_widget)
+        self.btn_fImage.setGeometry(QtCore.QRect(970, 0, 120, 30))
+        self.btn_fImage.setObjectName("btn_fImage")
+        #self.verticalLayout_3.addWidget(self.v3_widget)
+        self.btn_mImage = QtWidgets.QPushButton(self.v2_widget)
+        self.btn_mImage.setGeometry(QtCore.QRect(1100, 0, 120, 30))
+        self.btn_mImage.setObjectName("btn_fImage")
+        #self.verticalLayout_3.addWidget(self.v3_widget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
@@ -377,30 +556,230 @@ class Ui_MainWindow(object):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.lbl_pgsbStep = QtWidgets.QLabel("",self.statusbar)
+        self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 200, 20))
+        #self.lbl_pgsbStep.setFont(font)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        #Disabled checkbox 이벤트
+        self.checkBox_MvgToMvs.stateChanged.connect(lambda: self.piplineDisabled(4))
+        self.checkBox_Densify.stateChanged.connect(lambda: self.piplineDisabled(5))
+        self.checkBox_ReconstructMesh.stateChanged.connect(lambda: self.piplineDisabled(6))
+        self.checkBox_RefineMesh.stateChanged.connect(lambda: self.piplineDisabled(7))
+        #self.checkBox_TextureMesh.stateChanged.connect(lambda: self.piplineDisabled(8))
+
+        #capture 버튼 이벤트
+        self.btn_capture.clicked.connect(self.captureFunc)
         #start 버튼 이벤트
         self.btn_start.clicked.connect(self.startPipline)
+        #previous 버튼 이벤트
+        self.btn_previous.clicked.connect(lambda: self.getPlyContainer(MainWindow))
+        #slider 이벤트
+        self.horizontalSlider.valueChanged.connect(self.optionChecking)
         #comboBox 이벤트
         self.comboBox.currentIndexChanged.connect(lambda: self.comboBoxFunc(MyWindow))
+
+        #feature image Dialog
+        self.btn_fImage.clicked.connect(lambda: self.openImageDialog("f"))
+        #match image Dialog
+        self.btn_mImage.clicked.connect(lambda: self.openImageDialog("m"))
         #output path Dialog
         self.btn_outputPath.clicked.connect(lambda:self.outputDialogFunc(MyWindow))
         #radio button 이벤트
-        self.DescriberMethodGroup.buttonClicked.connect(lambda: self.selectOptionFunc("features","-m"))
-        self.UprightGroup.buttonClicked.connect(lambda: self.selectOptionFunc("features","-u"))
-        self.PresetGroup.buttonClicked.connect(lambda: self.selectOptionFunc("features","-p"))
+        self.DescriberMethodGroup.buttonToggled.connect(lambda: self.selectOptionFunc("features","-m"))
+        self.UprightGroup.buttonToggled.connect(lambda: self.selectOptionFunc("features","-u"))
+        self.PresetGroup.buttonToggled.connect(lambda: self.selectOptionFunc("features","-p"))
+        self.RatioGroup.buttonToggled.connect(lambda: self.selectOptionFunc("matches","-r"))
+        self.GeometricModelGroup.buttonToggled.connect(lambda: self.selectOptionFunc("matches","-g"))
+        self.NearestMatchingGroup.buttonToggled.connect(lambda: self.selectOptionFunc("matches","-n"))
+        self.RefineIntrinsicsGroup.buttonToggled.connect(lambda: self.selectOptionFunc("seq", "-f"))
+        self.DensifyResolutionGroup.buttonToggled.connect(lambda: self.selectOptionFunc("densify", "--resolution-level"))
+        self.MinPointGroup.buttonToggled.connect(lambda: self.selectOptionFunc("mesh", "-d"))
+        self.ResolutionGroup.buttonToggled.connect(lambda: self.selectOptionFunc("refine", "--resolution-level"))
+        self.MaxFaceAreaGroup.buttonToggled.connect(lambda: self.selectOptionFunc("refine", "--max-face-area"))
+        self.TextureResolutionGroup.buttonToggled.connect(lambda: self.selectOptionFunc("texture", "--resolution-level"))
+        #Low 품질로 옵셥 초기화
+        self.radioBtn_SIFT.setChecked(True)
+        self.radioBtn_0.setChecked(True)
+        self.radioBtn_NORMAL.setChecked(True)
+        self.radioBtn_08.setChecked(True)
+        self.radioBtn_f.setChecked(True)
+        self.radioBtn_FASTCASCADEHASHINGL2.setChecked(True)
+        self.radioBtn_ALL.setChecked(True)
+        self.radioBtn_RL_3.setChecked(True)
+        self.radioBtn_minPoint_6.setChecked(True)
+        self.radioBtn_RL_6.setChecked(True)
+        self.radioBtn_MaxFace_16.setChecked(True)
+        self.radioBtn_RL_9.setChecked(True)
 
-        self.RatioGroup.buttonClicked.connect(lambda: self.selectOptionFunc("matches","-r"))
-        self.GeometricModelGroup.buttonClicked.connect(lambda: self.selectOptionFunc("matches","-g"))
-        self.NearestMatchingGroup.buttonClicked.connect(lambda: self.selectOptionFunc("matches","-n"))
-        self.RefineIntrinsicsGroup.buttonClicked.connect(lambda: self.selectOptionFunc("seq", "-f"))
-        self.DensifyResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("densify", "--resolution-level"))
-        self.MinPointGroup.buttonClicked.connect(lambda: self.selectOptionFunc("mesh", "-d"))
-        self.ResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("refine", "--resolution-level"))
-        self.MaxFaceAreaGroup.buttonClicked.connect(lambda: self.selectOptionFunc("refine", "--max-face-area"))
-        self.TextureResolutionGroup.buttonClicked.connect(lambda: self.selectOptionFunc("texture", "--resolution-level"))
+    def captureFunc(self):
+        global imgNum
+        self.v.capture('screeshot'+ str(imgNum) +'.png')
+        imgNum = imgNum + 1
+        print("captured")
+
+    def openImageDialog(self, signal):
+
+        if signal == "f":
+            print("open feature image Dialog")
+            f_dlg = ImageListDialog("f")
+            f_dlg.exec_()
+        elif signal == "m":
+            print("open match image Dialog")
+            m_dlg = ImageListDialog("m")
+            m_dlg.exec_()
+
+    def piplineDisabled(self, currentIndex):
+        if currentIndex == 4:
+            if self.checkBox_MvgToMvs.isChecked() == True:
+                self.checkBox_Densify.setChecked(True)
+                self.checkBox_ReconstructMesh.setChecked(True)
+                self.checkBox_RefineMesh.setChecked(True)
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_densifyPointCloud.setEnabled(False)
+                self.groupBox_reconstructMesh.setEnabled(False)
+                self.groupBox_refineMesh.setEnabled(False)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_densifyPointCloud.update()
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_MvgToMvs.isChecked() == False:
+                self.checkBox_Densify.setChecked(False)
+                self.checkBox_ReconstructMesh.setChecked(False)
+                self.checkBox_RefineMesh.setChecked(False)
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_densifyPointCloud.setEnabled(True)
+                self.groupBox_reconstructMesh.setEnabled(True)
+                self.groupBox_refineMesh.setEnabled(True)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_densifyPointCloud.update()
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+        elif currentIndex == 5:
+            if self.checkBox_Densify.isChecked() == True:
+                self.checkBox_ReconstructMesh.setChecked(True)
+                self.checkBox_RefineMesh.setChecked(True)
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_reconstructMesh.setEnabled(False)
+                self.groupBox_refineMesh.setEnabled(False)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_Densify.isChecked() == False:
+                self.checkBox_ReconstructMesh.setChecked(False)
+                self.checkBox_RefineMesh.setChecked(False)
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_reconstructMesh.setEnabled(True)
+                self.groupBox_refineMesh.setEnabled(True)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_reconstructMesh.update()
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+        elif currentIndex == 6:
+            if self.checkBox_ReconstructMesh.isChecked() == True:
+                self.checkBox_RefineMesh.setChecked(True)
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_refineMesh.setEnabled(False)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_ReconstructMesh.isChecked() == False:
+                self.checkBox_RefineMesh.setChecked(False)
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_refineMesh.setEnabled(True)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_refineMesh.update()
+                self.groupBox_textureMesh.update()
+        elif currentIndex == 7:
+            if self.checkBox_RefineMesh.isChecked() == True:
+                self.checkBox_TextureMesh.setChecked(True)
+                self.groupBox_textureMesh.setEnabled(False)
+                self.groupBox_textureMesh.update()
+            elif self.checkBox_ReconstructMesh.isChecked() == False:
+                self.checkBox_TextureMesh.setChecked(False)
+                self.groupBox_textureMesh.setEnabled(True)
+                self.groupBox_textureMesh.update()
+            
+
+    def optionChecking(self):
+        #LOW Level로 옵션 초기화
+        if self.horizontalSlider.value() >= 0 and self.horizontalSlider.value() <= 25:
+            self.horizontalSlider.setValue = 0
+
+            self.radioBtn_SIFT.setChecked(True)
+            self.radioBtn_0.setChecked(True)
+            self.radioBtn_NORMAL.setChecked(True)
+            self.radioBtn_08.setChecked(True)
+            self.radioBtn_f.setChecked(True)
+            self.radioBtn_FASTCASCADEHASHINGL2.setChecked(True)
+            self.radioBtn_RL_3.setChecked(True)
+            self.radioBtn_minPoint_25f.setChecked(True)
+            self.radioBtn_RL_6.setChecked(True)
+            self.radioBtn_RL_9.setChecked(True)
+
+        #MEDIUM Level로 옵션 초기화
+        elif self.horizontalSlider.value() > 25 and self.horizontalSlider.value() <= 50:
+            self.horizontalSlider.setValue = 50
+
+            self.radioBtn_SIFT.setChecked(True)
+            self.radioBtn_0.setChecked(True)
+            self.radioBtn_HIGH.setChecked(True)
+            self.radioBtn_08.setChecked(True)
+            self.radioBtn_f.setChecked(True)
+            self.radioBtn_ANNL2.setChecked(True)
+            self.radioBtn_RL_2.setChecked(True)
+            self.radioBtn_minPoint_25f.setChecked(True)
+            self.radioBtn_RL_5.setChecked(True)
+            self.radioBtn_RL_8.setChecked(True)
+
+        #HIGH Level로 옵션 초기화
+        elif self.horizontalSlider.value() > 50 and self.horizontalSlider.value() <= 100:
+            self.horizontalSlider.setValue = 100
+
+            self.radioBtn_SIFT.setChecked(True)
+            self.radioBtn_0.setChecked(True)
+            self.radioBtn_ULTRA.setChecked(True)
+            self.radioBtn_08.setChecked(True)
+            self.radioBtn_f.setChecked(True)
+            self.radioBtn_ANNL2.setChecked(True)
+            self.radioBtn_RL_1.setChecked(True)
+            self.radioBtn_minPoint_6.setChecked(True)
+            self.radioBtn_RL_4.setChecked(True)
+            self.radioBtn_RL_7.setChecked(True)
+
+    def getPlyContainer(self, MyWindow):
+        self.th = Thread()
+        self.th.change_value.connect(self.pgsb.setValue)
+        self.th.change_label.connect(self.lbl_pgsbStep.setText)
+        self.th.start()
+        # #ply viewer 생성  & ply 파일 read
+        # data = plyfile.PlyData.read('scene_dense.ply')['vertex']
+        # xyz = np.c_[data['x'], data['y'], data['z']]
+        # rgb = np.c_[data['red'], data['green'], data['blue']]
+        # self.v = pptk.viewer(xyz)
+        # self.v.set(point_size=0.0005)
+        # self.v.attributes(rgb / 255.)
+        
+        # #캡쳐 버튼 활성화
+        # self.btn_capture.setEnabled(True)
+
+        # #터미널에서 viewer로 열린 window 잡아서 tab에 contain
+        # viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
+        # print(viewerWinID_str)
+        # window = QWindow.fromWinId(int(viewerWinID_str, 16))
+        # window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        # MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
+        # self.tab1.layout = QtWidgets.QVBoxLayout()
+        # self.tab1.layout.addWidget(MyWindow.windowcontainer)
+        # self.tab1.setLayout(self.tab1.layout)
+        # self.update()
+        # self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
+        
 
     def startPipline(self):
         print ("1. Intrinsics analysis")
@@ -418,6 +797,16 @@ class Ui_MainWindow(object):
         print ("2. Compute features")
         pFeatures = subprocess.Popen( param )
         pFeatures.wait()
+        #====================================================================
+        # 특징점 캡쳐
+        pFeature_dir = os.path.join(output_dir, "FeatureImage")
+        if not os.path.exists(pFeature_dir):
+            os.mkdir(pFeature_dir)
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
+
+        pFeatures_Capture = subprocess.Popen( param )
+        pFeatures_Capture.wait()
 
         #====================================================================
         # Matches 옵션 설정
@@ -431,6 +820,17 @@ class Ui_MainWindow(object):
         print ("3. Compute matches")
         pMatches = subprocess.Popen( param )
         pMatches.wait()
+
+        #====================================================================
+        # 매칭점 캡쳐
+        pMatches_dir = os.path.join(output_dir, "MatchImage")
+        if not os.path.exists(pMatches_dir):
+            os.mkdir(pMatches_dir)
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportMatches"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-m", matches_dir + "/matches.putative.bin", "-o", pMatches_dir])
+
+        pMatches_Capture = subprocess.Popen( param )
+        pMatches_Capture.wait()
 
         # Create the reconstruction if not present
         if not os.path.exists(reconstruction_dir):
@@ -549,21 +949,9 @@ class Ui_MainWindow(object):
                 option[pipNum][signal] = self.TextureResolutionGroup.checkedButton().text()
             print(option["texture"])
 
-            
     def outputDialogFunc(self, MyWindow):
-        global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
         #QFileDialog.getOpenFileName()
         output_dir = str(QFileDialog.getExistingDirectory(self.centralwidget))
-        ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
-        matches_dir = os.path.join(output_dir, "matches")
-        reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
-        Scene_dir = os.path.join(output_dir,"Scene")
-
-        print("!!"+output_dir)
-        # Create the ouput/matches folder if not present
-        if not os.path.exists(matches_dir):
-            os.mkdir(matches_dir)
-
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -578,6 +966,7 @@ class Ui_MainWindow(object):
         self.comboBox.setItemText(6, _translate("MainWindow", "Reconstruct Mesh"))
         self.comboBox.setItemText(7, _translate("MainWindow", "Refine Mesh"))
         self.comboBox.setItemText(8, _translate("MainWindow", "Texture Mesh"))
+        self.label.setText(_translate("MainWindow", " L                       M                     H"))
         self.groupBox_computeFeatures.setTitle(_translate("MainWindow", "Options"))
         self.radioBtn_SIFT.setText(_translate("MainWindow", "SIFT"))
         self.DescriberMethod.setText(_translate("MainWindow", "Describer Method ( -m )"))
@@ -649,8 +1038,16 @@ class Ui_MainWindow(object):
         self.radioBtn_RL_7.setText(_translate("MainWindow", "1"))
         self.radioBtn_RL_8.setText(_translate("MainWindow", "2"))
         self.radioBtn_RL_9.setText(_translate("MainWindow", "3"))
+        self.btn_capture.setIcon(QtGui.QIcon('capture.png'))
+        self.btn_capture.setIconSize(QtCore.QSize(24,24))
         self.btn_start.setText(_translate("MainWindow", "Start"))
         self.btn_previous.setText(_translate("MainWindow", "Previous"))
+        self.btn_fImage.setIcon(QtGui.QIcon('imageIcon.png'))
+        self.btn_fImage.setIconSize(QtCore.QSize(24,24))
+        self.btn_fImage.setText(_translate("MainWindow", " Features"))
+        self.btn_mImage.setIcon(QtGui.QIcon('imageIcon.png'))
+        self.btn_mImage.setIconSize(QtCore.QSize(24,24))
+        self.btn_mImage.setText(_translate("MainWindow", " Matches"))
 
     def comboBoxFunc(self, MyWindow):
         #Compute Features
@@ -752,12 +1149,7 @@ class Ui_MainWindow(object):
 class MyWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        #data = plyfile.PlyData.read('scene_dense.ply')['vertex']
-        #xyz = np.c_[data['x'], data['y'], data['z']]
-        #rgb = np.c_[data['red'], data['green'], data['blue']]
-        #self.v = pptk.viewer(xyz)
-        #self.v.set(point_size=0.0005)
-        #self.v.attributes(rgb / 255.)
+        
 
         self.ui = Ui_MainWindow()
         self.startSetupUI()
@@ -767,6 +1159,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.show()
 
 if __name__ == "__main__":
+    import sys
     app = QtWidgets.QApplication(sys.argv)
     #MainWindow = QtWidgets.QMainWindow()
     MainWindow = MyWindow()
