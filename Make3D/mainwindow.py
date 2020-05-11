@@ -45,7 +45,6 @@ camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_c
 
 
 
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -420,6 +419,17 @@ class Ui_MainWindow(object):
         pFeatures.wait()
 
         #====================================================================
+        # 특징점 캡쳐
+        pFeature_dir = os.path.join(output_dir, "FeatureImage")
+        if not os.path.exists(pFeature_dir):
+            os.mkdir(pFeature_dir)
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
+
+        pFeatures_Capture = subprocess.Popen( param )
+        pFeatures_Capture.wait()
+
+        #====================================================================
         # Matches 옵션 설정
 
         param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
@@ -432,10 +442,20 @@ class Ui_MainWindow(object):
         pMatches = subprocess.Popen( param )
         pMatches.wait()
 
+        #====================================================================
+        # 매칭점 캡쳐
+        pMatches_dir = os.path.join(output_dir, "MatchImage")
+        if not os.path.exists(pMatches_dir):
+            os.mkdir(pMatches_dir)
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportMatches"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-m", matches_dir + "/matches.putative.bin", "-o", pMatches_dir])
+
+        pMatches_Capture = subprocess.Popen( param )
+        pMatches_Capture.wait()
+
         # Create the reconstruction if not present
         if not os.path.exists(reconstruction_dir):
             os.mkdir(reconstruction_dir)
-        
 
         # Create the ChangeBlack if not present
         file_list = os.listdir(input_dir)
