@@ -50,30 +50,66 @@ config.display()
 print(COCO_MODEL_PATH)
 # Create model object in inference mode.
 model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
-print("1")
+
 # Load weights trained on MS-COCO
 model.load_weights(COCO_MODEL_PATH, by_name=True)
-print("2")
+
 # COCO Class names
 # Index of the class in the list is its ID. For example, to get ID of
 # the teddy bear class, use: class_names.index('teddy bear')
 class_names = ['bg','car']
 
-# Load a random image from the images folder
 file_names = next(os.walk(IMAGE_DIR))[2]
-image = skimage.io.imread(os.path.join(IMAGE_DIR, random.choice(file_names)))
+for name in file_names:
+    image = skimage.io.imread(os.path.join(IMAGE_DIR, name))
 
-# Run detection
-results = model.detect([image], verbose=1)
+    # Run detection
+    results = model.detect([image], verbose=1)
+    
+    # 해당 이미지의 mask 좌표를 얻어오고, 재조합
+    r = results[0]
 
-# Visualize results
-r = results[0]
-visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
-                            class_names, r['scores'])
-# , save_dir="/Users/hwan/Desktop/git-mask_RCNN/Mask_RCNN/samples", img_name="result.png"
-# cv2.imwrite(result.png,image)
-# plt.savefig('result.png')
-# plt.savefig('result.png',bbox_inches='tight')
+    lists = dict()
+    for i in range(0, len(r['masks'])):
+        data = [pos for pos, val in enumerate(r['masks'][i]) if val == True]
+        if len(data) != 0:
+            lists[i] = data
 
-splash = car.color_splash(image, r['masks'])
-display_images([splash],cols=1)
+    pos = list()
+    for i in lists:
+            for j in lists[i]:
+                pos.append([i,j])
+
+    pos = np.array(pos, np.int32)
+
+    # 해당 이미지의 좌표를 통해 mask 제작
+    img = np.zeros((image.shape[1],image.shape[0]),np.uint8)
+    img = cv2.polylines(img, [pos], False, (255, 255, 255), 1)
+
+    # 마스크를 좌우반전 및 로테이션 작업을 통해 기존의 사진과 일치시킴
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_flip = cv2.flip(img_rgb, 1) # 1은 좌우 반전, 0은 상하 반전입니다.
+
+    height, width, _ = img_flip.shape
+    image_center = (width/2, height/2) # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
+
+    rotation_mat = cv2.getRotationMatrix2D(image_center, 90, 1.)
+
+    # rotation calculates the cos and sin, taking absolutes of those.
+    abs_cos = abs(rotation_mat[0,0]) 
+    abs_sin = abs(rotation_mat[0,1])
+
+    # find the new width and height bounds
+    bound_w = int(height * abs_sin + width * abs_cos)
+    bound_h = int(height * abs_cos + width * abs_sin)
+
+    # subtract old image center (bringing image back to origo) and adding the new image center coordinates
+    rotation_mat[0, 2] += bound_w/2 - image_center[0]
+    rotation_mat[1, 2] += bound_h/2 - image_center[1]
+
+    # rotate image with the new bounds and translated rotation matrix
+    rotated_mat = cv2.warpAffine(img_flip, rotation_mat, (bound_w, bound_h))
+
+    # 사진 저장
+    mask_png = IMAGE_DIR+"/"+ name[:-4]+"_mask.png"
+    cv2.imwrite(mask_png, rotated_mat)
