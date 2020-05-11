@@ -20,7 +20,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
 from PyQt5.QtCore import Qt
-
+from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QWaitCondition
+from PyQt5.QtCore import QMutex
+from PyQt5.QtCore import pyqtSignal
 
 #option Dictionary 
 # ex option["features"]["-m"] = SIFT
@@ -47,6 +50,74 @@ ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
 matches_dir = os.path.join(output_dir, "matches")
 reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
 Scene_dir = os.path.join(output_dir,"Scene")
+
+class Thread(QThread):
+    # 사용자 정의 시그널 선언
+    change_value = pyqtSignal(int)
+    change_label = pyqtSignal(str)
+
+    def __init__(self):
+        QThread.__init__(self)
+        self.cond = QWaitCondition()
+        self.mutex = QMutex()
+        self.cnt = 0
+        self._status = True
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        textfile = open('progress.txt')
+        while True:
+            self.mutex.lock()
+
+            if not self._status:
+                self.cond.wait(self.mutex)
+
+            while True:
+                self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
+
+                step = textfile.readline()[:-1]
+                percent = textfile.readline()[:-1]
+                
+                if not step:
+                    continue
+                elif step == "features":
+                    self.change_label.emit("Compute Features (1/8)")
+                elif step == "matches":
+                    self.change_label.emit("Compute Matches (2/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (3/8)")
+                # elif step == "matches":thread
+                #     self.change_label.emit("Compute Matches (4/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (5/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (6/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (7/8)")
+                # elif step == "matches":
+                #     self.change_label.emit("Compute Matches (8/8)")
+
+                print(step)
+                print(percent)
+
+                if 100 == int(percent):
+                    percent = 0
+                    #break
+                self.change_value.emit(int(percent))
+                self.mutex.unlock()
+            
+
+    def toggle_status(self):
+        self._status = not self._status
+        if self._status:
+            self.cond.wakeAll()
+
+    @property
+    def status(self):
+        return self._status
+
 
 # Create the ouput/matches folder if not present
 if not os.path.exists(matches_dir):
@@ -460,11 +531,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.v3_widget = QtWidgets.QWidget(self.verticalLayoutWidget_3)
         self.v3_widget.setObjectName("v3_widget")
+        self.pgsb = QtWidgets.QProgressBar(self.v3_widget)
+        self.pgsb.setGeometry(QtCore.QRect(10,15, 1250, 25))
+        self.pgsb.setObjectName("pgsb")
         self.btn_start = QtWidgets.QPushButton(self.v3_widget)
         self.btn_start.setGeometry(QtCore.QRect(1350, 10, 120, 30))
         self.btn_start.setObjectName("btn_start")
         self.btn_previous = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_previous.setGeometry(QtCore.QRect(1240, 10, 100, 30))
+        self.btn_previous.setGeometry(QtCore.QRect(1270, 10, 70, 30))
         self.btn_previous.setObjectName("btn_previous")
         self.verticalLayout_3.addWidget(self.v3_widget)
         self.btn_fImage = QtWidgets.QPushButton(self.v2_widget)
@@ -483,6 +557,9 @@ class Ui_MainWindow(object):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.lbl_pgsbStep = QtWidgets.QLabel("",self.statusbar)
+        self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 200, 20))
+        #self.lbl_pgsbStep.setFont(font)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -677,34 +754,38 @@ class Ui_MainWindow(object):
             self.radioBtn_RL_7.setChecked(True)
 
     def getPlyContainer(self, MyWindow):
-        #ply viewer 생성  & ply 파일 read
-        data = plyfile.PlyData.read('scene_dense.ply')['vertex']
-        xyz = np.c_[data['x'], data['y'], data['z']]
-        rgb = np.c_[data['red'], data['green'], data['blue']]
-        self.v = pptk.viewer(xyz)
-        self.v.set(point_size=0.0005)
-        self.v.attributes(rgb / 255.)
+        self.th = Thread()
+        self.th.change_value.connect(self.pgsb.setValue)
+        self.th.change_label.connect(self.lbl_pgsbStep.setText)
+        self.th.start()
+        # #ply viewer 생성  & ply 파일 read
+        # data = plyfile.PlyData.read('scene_dense.ply')['vertex']
+        # xyz = np.c_[data['x'], data['y'], data['z']]
+        # rgb = np.c_[data['red'], data['green'], data['blue']]
+        # self.v = pptk.viewer(xyz)
+        # self.v.set(point_size=0.0005)
+        # self.v.attributes(rgb / 255.)
         
-        #캡쳐 버튼 활성화
-        self.btn_capture.setEnabled(True)
+        # #캡쳐 버튼 활성화
+        # self.btn_capture.setEnabled(True)
 
-        #터미널에서 viewer로 열린 window 잡아서 tab에 contain
-        viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
-        print(viewerWinID_str)
-        window = QWindow.fromWinId(int(viewerWinID_str, 16))
-        window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
-        self.tab1.layout = QtWidgets.QVBoxLayout()
-        self.tab1.layout.addWidget(MyWindow.windowcontainer)
-        self.tab1.setLayout(self.tab1.layout)
-        #sys.stdout.flush()
-        self.update()
+        # #터미널에서 viewer로 열린 window 잡아서 tab에 contain
+        # viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
+        # print(viewerWinID_str)
+        # window = QWindow.fromWinId(int(viewerWinID_str, 16))
+        # window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        # MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
+        # self.tab1.layout = QtWidgets.QVBoxLayout()
+        # self.tab1.layout.addWidget(MyWindow.windowcontainer)
+        # self.tab1.setLayout(self.tab1.layout)
+        # self.update()
         # self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
-        #self.tabs.update()
-        #MyWindow.update()
         
 
     def startPipline(self):
+        #Thread 생성
+
+
         print ("1. Intrinsics analysis")
         pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
         pIntrisics.wait()
