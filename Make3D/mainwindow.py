@@ -146,16 +146,16 @@ class ImageListDialog(QDialog):
         self.imageLabel.setGeometry(QtCore.QRect(200, 10, 580, 780))
 
         if self.path == "f":
-            self.path = os.path.abspath('./featureImages')
+            self.path = os.path.abspath('./output/FeatureImage')
         elif self.path == "m":
-            self.path = os.path.abspath('./matchImages')
+            self.path = os.path.abspath('./output/MatchImage')
 
 
         img_list = []
         # r=root, d=directories, f = files
         for r, d, f in os.walk(self.path):
             for file in f:
-                if '.JPG' in file:
+                if '.svg' in file:
                     #img_list.append(os.path.join(r, file))
                     img_list.append(file)
 
