@@ -11,11 +11,16 @@ import subprocess
 import sys
 import pptk
 import math
+import random
 import string
 import numpy as np
+import skimage.io
+import matplotlib
+import matplotlib.pyplot as plt
+import ssl
 import plyfile
 import cv2
-from wmctrl import Window
+#from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
@@ -39,17 +44,18 @@ option["texture"] = dict()
 imgNum = 0
 
 program_dir = os.getcwd()
-input_dir = os.path.join(program_dir, "Image")
+input_dir = os.path.join(program_dir, "Image") + "/"
 output_dir = ""
 
 OPENMVG_SFM_BIN = os.path.join(program_dir, "Binary")
 CAMERA_SENSOR_WIDTH_DIRECTORY = os.path.join(program_dir, "Camera")
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
 
-ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
-matches_dir = os.path.join(output_dir, "matches")
-reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
-Scene_dir = os.path.join(output_dir,"Scene")
+ChangeWhite_dir = ""
+matches_dir = ""
+reconstruction_dir = ""
+Scene_dir = ""
+
 
 class Thread(QThread):
     # 사용자 정의 시그널 선언
@@ -117,12 +123,8 @@ class Thread(QThread):
     @property
     def status(self):
         return self._status
-
-
-# Create the ouput/matches folder if not present
-if not os.path.exists(matches_dir):
-  os.mkdir(matches_dir)
-
+    
+    
 class ImageListDialog(QDialog):
     def __init__(self, signal):
         super().__init__()
@@ -130,6 +132,7 @@ class ImageListDialog(QDialog):
         self.setupUI()
 
     def setupUI(self):
+        global output_dir
         self.setGeometry(200, 200, 800, 800)
         if self.path == "f":
             self.setWindowTitle("Feature Image List")
@@ -146,16 +149,15 @@ class ImageListDialog(QDialog):
         self.imageLabel.setGeometry(QtCore.QRect(200, 10, 580, 780))
 
         if self.path == "f":
-            self.path = os.path.abspath('./featureImages')
+            self.path = output_dir + "FeatureImage"
         elif self.path == "m":
-            self.path = os.path.abspath('./matchImages')
-
+            self.path = output_dir + "MatchImage"
 
         img_list = []
         # r=root, d=directories, f = files
         for r, d, f in os.walk(self.path):
             for file in f:
-                if '.JPG' in file:
+                if '.svg' in file:
                     #img_list.append(os.path.join(r, file))
                     img_list.append(file)
 
@@ -347,7 +349,7 @@ class Ui_MainWindow(object):
         self.groupBox_sequential = QtWidgets.QGroupBox(self.v2_widget)
         self.groupBox_sequential.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_sequential.setObjectName("groupBox_sequential")
-        self.groupBox_sequential.setVisible(False)
+        #self.groupBox_sequential.setVisible(False)
         self.radioBtn_ALL = QtWidgets.QRadioButton(self.groupBox_sequential)
         self.radioBtn_ALL.setGeometry(QtCore.QRect(20, 50, 111, 41))
         self.radioBtn_ALL.setObjectName("radioBtn_ALL")
@@ -782,6 +784,8 @@ class Ui_MainWindow(object):
         
 
     def startPipline(self):
+        global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
+        
         print ("1. Intrinsics analysis")
         pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
         pIntrisics.wait()
@@ -797,7 +801,16 @@ class Ui_MainWindow(object):
         print ("2. Compute features")
         pFeatures = subprocess.Popen( param )
         pFeatures.wait()
-        
+        #====================================================================
+        # 특징점 캡쳐
+        pFeature_dir = os.path.join(output_dir, "FeatureImage")
+        if not os.path.exists(pFeature_dir):
+            os.mkdir(pFeature_dir)
+
+        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
+
+        pFeatures_Capture = subprocess.Popen( param )
+        pFeatures_Capture.wait()
         #====================================================================
         # Matches 옵션 설정
 
@@ -940,7 +953,19 @@ class Ui_MainWindow(object):
 
     def outputDialogFunc(self, MyWindow):
         #QFileDialog.getOpenFileName()
-        output_dir = str(QFileDialog.getExistingDirectory(self.centralwidget))
+        global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
+        
+        output_dir = str(QFileDialog.getExistingDirectory(self.centralwidget)) + "/"
+        ChangeWhite_dir = os.path.join(output_dir, "ChangeWhite")
+        matches_dir = os.path.join(output_dir, "Matches")
+        reconstruction_dir = os.path.join(output_dir, "Reconstruct")
+        Scene_dir = os.path.join(output_dir,"Scene")
+        
+        # Create the ouput/matches folder if not present
+        if not os.path.exists(matches_dir):
+            os.mkdir(matches_dir)
+
+        print(output_dir)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
