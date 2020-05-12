@@ -14,13 +14,13 @@ import math
 import random
 import string
 import numpy as np
-import skimage.io
-import matplotlib
-import matplotlib.pyplot as plt
-import ssl
+#import skimage.io
+#import matplotlib
+#import matplotlib.pyplot as plt
+#import ssl
 import plyfile
-import cv2
-#from wmctrl import Window
+#import cv2
+from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
@@ -82,26 +82,27 @@ class Thread(QThread):
 
             while True:
                 self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
-
+                textfile.readline()
                 step = textfile.readline()[:-1]
+                textfile.readline()
                 percent = textfile.readline()[:-1]
                 
                 if not step:
                     continue
-                elif step == "features":
-                    self.change_label.emit("Compute Features (1/8)")
-                elif step == "matches":
-                    self.change_label.emit("Compute Matches (2/8)")
-                # elif step == "matches":
-                #     self.change_label.emit("Compute Matches (3/8)")
-                # elif step == "matches":thread
-                #     self.change_label.emit("Compute Matches (4/8)")
-                # elif step == "matches":
-                #     self.change_label.emit("Compute Matches (5/8)")
-                # elif step == "matches":
-                #     self.change_label.emit("Compute Matches (6/8)")
-                # elif step == "matches":
-                #     self.change_label.emit("Compute Matches (7/8)")
+                elif step == "- Export Feature -":
+                    self.change_label.emit("Export Feature (1/8)")
+                elif step == "- Matching -":
+                    self.change_label.emit("Matching (2/8)")
+                elif step == "- Geometric filtering -":
+                    self.change_label.emit("Geometric filtering (3/8)")
+                elif step == "- Export Matches -":
+                    self.change_label.emit("Export Matches (4/8)")
+                elif step == "- Resection -":
+                    self.change_label.emit("Resection (5/8)")
+                elif step == "- Structure Color -":
+                    self.change_label.emit("Structure Color (6/8)")
+                elif step == "- OpenMVG2OpenMVS_UNDISTORT -":
+                    self.change_label.emit("OpenMVG2OpenMVS_UNDISTORT (7/8)")
                 # elif step == "matches":
                 #     self.change_label.emit("Compute Matches (8/8)")
 
@@ -188,6 +189,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_1.setObjectName("verticalLayout_1")
         self.v1_widget = QtWidgets.QWidget(self.verticalLayoutWidget)
         self.v1_widget.setObjectName("v1_widget")
+        self.checkBox_rcnn = QtWidgets.QCheckBox("Masking", self.v1_widget)
+        self.checkBox_rcnn.setGeometry(QtCore.QRect(150,10, 131, 31))
         self.btn_outputPath = QtWidgets.QPushButton(self.v1_widget)
         self.btn_outputPath.setGeometry(QtCore.QRect(10, 10, 131, 31))
         self.btn_outputPath.setObjectName("btn_outputPath")
@@ -349,7 +352,7 @@ class Ui_MainWindow(object):
         self.groupBox_sequential = QtWidgets.QGroupBox(self.v2_widget)
         self.groupBox_sequential.setGeometry(QtCore.QRect(1290, 10, 180, 750))
         self.groupBox_sequential.setObjectName("groupBox_sequential")
-        #self.groupBox_sequential.setVisible(False)
+        self.groupBox_sequential.setVisible(False)
         self.radioBtn_ALL = QtWidgets.QRadioButton(self.groupBox_sequential)
         self.radioBtn_ALL.setGeometry(QtCore.QRect(20, 50, 111, 41))
         self.radioBtn_ALL.setObjectName("radioBtn_ALL")
@@ -545,11 +548,9 @@ class Ui_MainWindow(object):
         self.btn_fImage = QtWidgets.QPushButton(self.v2_widget)
         self.btn_fImage.setGeometry(QtCore.QRect(970, 0, 120, 30))
         self.btn_fImage.setObjectName("btn_fImage")
-        #self.verticalLayout_3.addWidget(self.v3_widget)
         self.btn_mImage = QtWidgets.QPushButton(self.v2_widget)
         self.btn_mImage.setGeometry(QtCore.QRect(1100, 0, 120, 30))
         self.btn_mImage.setObjectName("btn_fImage")
-        #self.verticalLayout_3.addWidget(self.v3_widget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
@@ -560,7 +561,6 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.lbl_pgsbStep = QtWidgets.QLabel("",self.statusbar)
         self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 200, 20))
-        #self.lbl_pgsbStep.setFont(font)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -785,7 +785,11 @@ class Ui_MainWindow(object):
 
     def startPipline(self):
         global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
-        
+        #============================================================================
+        # RCNN checkbox 확인
+        if self.checkBox_rcnn.isChecked() == True:
+            print("masking around the object")
+
         print ("1. Intrinsics analysis")
         pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
         pIntrisics.wait()
