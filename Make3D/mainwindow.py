@@ -19,16 +19,12 @@ import numpy as np
 #import matplotlib.pyplot as plt
 #import ssl
 import plyfile
-#import cv2
-from wmctrl import Window
+import cv2
+#from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import QThread
-from PyQt5.QtCore import QWaitCondition
-from PyQt5.QtCore import QMutex
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt, QThread, QWaitCondition, QMutex, pyqtSignal, QObject
 
 #option Dictionary 
 # ex option["features"]["-m"] = SIFT
@@ -57,7 +53,152 @@ reconstruction_dir = ""
 Scene_dir = ""
 
 
+class Start(QThread):
+        def __init__(self):
+            QThread.__init__(self)
+
+        def __del__(self):
+            self.wait()
+
+        def run(self):
+            global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir, OPENMVG_SFM_BIN, input_dir, camera_file_params, program_dir, option
+            #============================================================================
+            count = 0
+            pSteps = None
+
+            while True:
+                if count == 0:
+                    print ("1. Intrinsics analysis")
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
+                
+                #====================================================================
+                # Features 옵션 설정
+            
+                elif count == 1:
+                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
+
+                    for op in option["features"]:
+                        param.append(op)
+                        param.append(option["features"][op])
+
+                    print ("2. Compute features")
+                    pSteps = subprocess.Popen( param )
+
+                elif count == 2:
+                    #====================================================================
+                    # 특징점 캡쳐
+                    pFeature_dir = os.path.join(output_dir, "FeatureImage")
+                    if not os.path.exists(pFeature_dir):
+                        os.mkdir(pFeature_dir)
+
+                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
+
+                    pSteps = subprocess.Popen( param )
+
+                elif count == 3:
+                    #====================================================================
+                    # Matches 옵션 설정
+
+                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
+
+                    for op in option["matches"]:
+                        param.append(op)
+                        param.append(option["matches"][op])
+
+                    print ("3. Compute matches")
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
+
+                elif count == 4:
+                    #====================================================================
+                    # 매칭점 캡쳐
+                    pMatches_dir = os.path.join(output_dir, "MatchImage")
+                    if not os.path.exists(pMatches_dir):
+                        os.mkdir(pMatches_dir)
+
+                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportMatches"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-m", matches_dir + "/matches.putative.bin", "-o", pMatches_dir])
+
+                    pSteps = subprocess.Popen( param )
+
+                elif count == 5:
+                    # Create the reconstruction if not present
+                    if not os.path.exists(reconstruction_dir):
+                        os.mkdir(reconstruction_dir)
+
+                    # Create the ChangeBlack if not present
+                    file_list = os.listdir(input_dir)
+                    if not os.path.exists(ChangeWhite_dir):
+                        os.mkdir(ChangeWhite_dir)
+                        
+                    for str in file_list:
+                        path = input_dir + str
+                        if "_mask" in str:
+                            color_dir = input_dir + str[:-9] + ".jpg"
+                            
+                            mask = cv2.imread(path, 0)
+                            img = cv2.imread(color_dir)
+                            
+                            m_height, m_width = mask.shape
+                            i_height, i_width, _ = img.shape
+                            
+                            if m_height == i_height and m_width == i_width: 
+                                # 마스크를 적용시킨 하얀색 배경 사진
+                                #matrix = cv2.getRotationMatrix2D((i_width/2, i_height/2), 90, 1)
+
+                                #dst = cv2.warpAffine(img, matrix, (i_width, i_height))
+                                #i = i_width/2 - i_height/2
+                                #M = np.float32([[1, 0, -i], [0, 1, i]])
+                                #img_translation = cv2.warpAffine(dst, M, (i_height, i_width))
+                                img_white = ~mask
+                                img_white = cv2.cvtColor(img_white, cv2.COLOR_GRAY2BGR)
+                            
+                                res = cv2.bitwise_and(img, img, mask = mask)
+                                
+                                weighted_img = cv2.add(res, img_white)
+                                
+                                mask_png = ChangeWhite_dir + "/" + str[:-9] + ".jpg"
+                                
+                                cv2.imwrite(mask_png, weighted_img)
+
+                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
+
+                    for op in option["seq"]:
+                        param.append(op)
+                        param.append(option["seq"][op])
+
+                    print ("4. Do Sequential/Incremental reconstruction")
+                    pSteps = subprocess.Popen( param )
+
+
+                #====================================================================
+                # 나머지
+                elif count == 6:
+                    print ("5. Colorize Structure")
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
+            
+                elif count == 7:
+                    print ("6. Structure from Known Poses (robust triangulation)")
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.bin")] )
+            
+                elif count == 8:
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
+
+                elif count == 9:
+                    if not os.path.exists(Scene_dir):
+                        os.mkdir(Scene_dir)
+
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
+            
+                elif count == 10:
+                    break
+
+                while True:
+                    if pSteps.poll() is not None:
+                        print("Finish===============================")
+                        count += 1
+                        break
+
 class Thread(QThread):
+    global output_dir
     # 사용자 정의 시그널 선언
     change_value = pyqtSignal(int)
     change_label = pyqtSignal(str)
@@ -72,49 +213,64 @@ class Thread(QThread):
     def __del__(self):
         self.wait()
 
+    def toggle_status(self):
+        self._status = not self._status
+
+        if self._status:
+            self.cond.wakeAll()
+
+    @property
+    def status(self):
+        return self._status
+
     def run(self):
-        textfile = open('progress.txt')
         while True:
-            self.mutex.lock()
+            if not os.path.exists(output_dir + 'Progress'):
+                continue
 
-            if not self._status:
-                self.cond.wait(self.mutex)
+            with open(output_dir + 'Progress/progress.txt' ,'r') as textfile:
+                while True:
+                    # self.mutex.lock()
 
-            while True:
-                self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
-                textfile.readline()
-                step = textfile.readline()[:-1]
-                textfile.readline()
-                percent = textfile.readline()[:-1]
-                
-                if not step:
-                    continue
-                elif step == "- Export Feature -":
-                    self.change_label.emit("Export Feature (1/8)")
-                elif step == "- Matching -":
-                    self.change_label.emit("Matching (2/8)")
-                elif step == "- Geometric filtering -":
-                    self.change_label.emit("Geometric filtering (3/8)")
-                elif step == "- Export Matches -":
-                    self.change_label.emit("Export Matches (4/8)")
-                elif step == "- Resection -":
-                    self.change_label.emit("Resection (5/8)")
-                elif step == "- Structure Color -":
-                    self.change_label.emit("Structure Color (6/8)")
-                elif step == "- OpenMVG2OpenMVS_UNDISTORT -":
-                    self.change_label.emit("OpenMVG2OpenMVS_UNDISTORT (7/8)")
-                # elif step == "matches":
-                #     self.change_label.emit("Compute Matches (8/8)")
+                    # if not self._status:
+                    #     self.cond.wait(self.mutex)
 
-                print(step)
-                print(percent)
+                    textfile.readline()
+                    step = textfile.readline()[:-1]
+                    textfile.readline()
+                    percent = textfile.readline()
+                    
+                    textfile.seek(0)
 
-                if 100 == int(percent):
-                    percent = 0
-                    #break
-                self.change_value.emit(int(percent))
-                self.mutex.unlock()
-            
+                    if not step:
+                        continue
+                    elif step == "- Feature -":
+                        self.change_label.emit("Feature (1/9)")
+                    elif step == "- Export Feature -":
+                        self.change_label.emit("Export Feature (2/9)")
+                    elif step == "- Matching -":
+                        self.change_label.emit("Matching (3/9)")
+                    elif step == "- Geometric filtering -":
+                        self.change_label.emit("Geometric filtering (4/8)")
+                    elif step == "- Export Matches -":
+                        self.change_label.emit("Export Matches (5/8)")
+                    elif step == "- Resection -":
+                        self.change_label.emit("Resection (6/8)")
+                    elif step == "- Structure Color -":
+                        self.change_label.emit("Structure Color (7/8)")
+                    elif step == "- OpenMVG2OpenMVS_UNDISTORT -":
+                        self.change_label.emit("OpenMVG2OpenMVS_UNDISTORT (8/8)")
+                    # elif step == "matches":
+                    #     self.change_label.emit("Compute Matches (8/8)")
+                    
+                    self.change_value.emit(int(percent))
+                    self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
+
+                    # self.mutex.unlock()
+                    # if 100 == int(percent):
+                    #     percent = 0
+                        #break
+
 
     def toggle_status(self):
         self._status = not self._status
@@ -616,6 +772,11 @@ class Ui_MainWindow(object):
         self.radioBtn_MaxFace_16.setChecked(True)
         self.radioBtn_RL_9.setChecked(True)
 
+        
+    def updateProgressBar(self, maxVal):
+            self.pgsb.setValue(maxVal)
+
+
     def captureFunc(self):
         global imgNum
         self.v.capture('screeshot'+ str(imgNum) +'.png')
@@ -623,7 +784,6 @@ class Ui_MainWindow(object):
         print("captured")
 
     def openImageDialog(self, signal):
-
         if signal == "f":
             print("open feature image Dialog")
             f_dlg = ImageListDialog("f")
@@ -755,10 +915,7 @@ class Ui_MainWindow(object):
             self.radioBtn_RL_7.setChecked(True)
 
     def getPlyContainer(self, MyWindow):
-        self.th = Thread()
-        self.th.change_value.connect(self.pgsb.setValue)
-        self.th.change_label.connect(self.lbl_pgsbStep.setText)
-        self.th.start()
+        pass
         # #ply viewer 생성  & ply 파일 read
         # data = plyfile.PlyData.read('scene_dense.ply')['vertex']
         # xyz = np.c_[data['x'], data['y'], data['z']]
@@ -782,139 +939,21 @@ class Ui_MainWindow(object):
         # self.update()
         # self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         
-
     def startPipline(self):
-        global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir
-        #============================================================================
         # RCNN checkbox 확인
         if self.checkBox_rcnn.isChecked() == True:
             print("masking around the object")
 
-        print ("1. Intrinsics analysis")
-        pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
-        pIntrisics.wait()
+        self.th = Thread()
+        self.th.change_value.connect(self.updateProgressBar)
+        self.th.change_label.connect(self.lbl_pgsbStep.setText)
+        self.th.start()
+
+        s = Start()
+        s.start()
+        print("STart")
         
-        #====================================================================
-        # Features 옵션 설정
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
-
-        for op in option["features"]:
-            param.append(op)
-            param.append(option["features"][op])
-
-        print ("2. Compute features")
-        pFeatures = subprocess.Popen( param )
-        pFeatures.wait()
-        #====================================================================
-        # 특징점 캡쳐
-        pFeature_dir = os.path.join(output_dir, "FeatureImage")
-        if not os.path.exists(pFeature_dir):
-            os.mkdir(pFeature_dir)
-
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
-
-        pFeatures_Capture = subprocess.Popen( param )
-        pFeatures_Capture.wait()
-        #====================================================================
-        # Matches 옵션 설정
-
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
-
-        for op in option["matches"]:
-            param.append(op)
-            param.append(option["matches"][op])
-
-        print ("3. Compute matches")
-        pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
-        pMatches.wait()
-
-        #====================================================================
-        # 매칭점 캡쳐
-        pMatches_dir = os.path.join(output_dir, "MatchImage")
-        if not os.path.exists(pMatches_dir):
-            os.mkdir(pMatches_dir)
-
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportMatches"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-m", matches_dir + "/matches.putative.bin", "-o", pMatches_dir])
-
-        pMatches_Capture = subprocess.Popen( param )
-        pMatches_Capture.wait()
-
-        # Create the reconstruction if not present
-        if not os.path.exists(reconstruction_dir):
-            os.mkdir(reconstruction_dir)
-
-        # Create the ChangeBlack if not present
-        file_list = os.listdir(input_dir)
-        if not os.path.exists(ChangeWhite_dir):
-            os.mkdir(ChangeWhite_dir)
-            
-        for str in file_list:
-            path = input_dir + str
-            if "_mask" in str:
-                color_dir = input_dir + str[:-9] + ".jpg"
-                
-                mask = cv2.imread(path, 0)
-                img = cv2.imread(color_dir)
-                
-                m_height, m_width = mask.shape
-                i_height, i_width, _ = img.shape
-                
-                if m_height == i_height and m_width == i_width: 
-                    # 마스크를 적용시킨 하얀색 배경 사진
-                    #matrix = cv2.getRotationMatrix2D((i_width/2, i_height/2), 90, 1)
-
-                    #dst = cv2.warpAffine(img, matrix, (i_width, i_height))
-                    #i = i_width/2 - i_height/2
-                    #M = np.float32([[1, 0, -i], [0, 1, i]])
-                    #img_translation = cv2.warpAffine(dst, M, (i_height, i_width))
-                    img_white = ~mask
-                    img_white = cv2.cvtColor(img_white, cv2.COLOR_GRAY2BGR)
-                
-                    res = cv2.bitwise_and(img, img, mask = mask)
-                    
-                    weighted_img = cv2.add(res, img_white)
-                    
-                    mask_png = ChangeWhite_dir + "/" + str[:-9] + ".jpg"
-                    
-                    cv2.imwrite(mask_png, weighted_img)
-        
-
-       #====================================================================
-        # Sequential 옵션 설정
-        
-        param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
-
-        for op in option["seq"]:
-            param.append(op)
-            param.append(option["seq"][op])
-
-
-        print ("4. Do Sequential/Incremental reconstruction")
-        pRecons = subprocess.Popen( param )
-        pRecons.wait()
-
-        #====================================================================
-        # 나머지
-
-        print ("5. Colorize Structure")
-        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
-        pRecons.wait()
-
-        # optional, compute final valid structure from the known camera poses
-        print ("6. Structure from Known Poses (robust triangulation)")
-        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.bin")] )
-        pRecons.wait()
-
-        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
-        pRecons.wait()
-
-        if not os.path.exists(Scene_dir):
-            os.mkdir(Scene_dir)
-        
-        pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
-        pRecons.wait()
-        #====================================================================
-
+    
     def selectOptionFunc(self, pipNum, signal):
         if pipNum == "features":
             if signal == "-m":

@@ -6,7 +6,7 @@ width="8064px" height="3024px" preserveAspectRatio="xMinYMin meet" viewBox="0 0 
 <image x="4032" y="0" width="4032px" height="3024px" opacity="1" xlink:href="/home/jeong/Code/2D-to-3D-Modeling-using-AI/Make3D/Image/20200227_180815.jpg"/>
 <polyline points="976.485,197.355,6473.62,1577.12" stroke="rgb(255,34,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="1345.13,203.157,6975.52,1191.08" stroke="rgb(63,0,255)" stroke-width="2" fill="none"></polyline>
-<polyline points="953.005,218.244,6139.28,649.749" stroke="rgb(233,255,0)" stroke-width="2" fill="none"></polyline>
+<polyline points="953.005,218.244,5563.68,1065.97" stroke="rgb(233,255,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="920.376,242.871,5615.06,537.498" stroke="rgb(216,255,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="1465.48,264.512,6982.89,1232.84" stroke="rgb(0,246,255)" stroke-width="2" fill="none"></polyline>
 <polyline points="1454.09,265.213,6849.87,1626.42" stroke="rgb(0,255,199)" stroke-width="2" fill="none"></polyline>
@@ -58,7 +58,7 @@ width="8064px" height="3024px" preserveAspectRatio="xMinYMin meet" viewBox="0 0 
 <polyline points="1959.15,650.985,5752.93,670.634" stroke="rgb(72,255,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="979.173,653.423,5820.41,2449.68" stroke="rgb(0,242,255)" stroke-width="2" fill="none"></polyline>
 <polyline points="2429.38,666.498,5461.42,2318.9" stroke="rgb(255,174,0)" stroke-width="2" fill="none"></polyline>
-<polyline points="2047.54,669.924,6417.43,820.467" stroke="rgb(255,0,191)" stroke-width="2" fill="none"></polyline>
+<polyline points="2047.54,669.924,6671.74,1475.59" stroke="rgb(255,0,191)" stroke-width="2" fill="none"></polyline>
 <polyline points="933.773,671.85,5628.32,2137.14" stroke="rgb(250,255,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="949.09,678.1,6553.46,1006.12" stroke="rgb(208,255,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="949.321,688.904,5826.5,1945.24" stroke="rgb(255,0,63)" stroke-width="2" fill="none"></polyline>
@@ -96,7 +96,7 @@ width="8064px" height="3024px" preserveAspectRatio="xMinYMin meet" viewBox="0 0 
 <polyline points="2442.59,953.548,6798.92,1458.18" stroke="rgb(0,169,255)" stroke-width="2" fill="none"></polyline>
 <polyline points="2063.2,978.943,6767.41,2015.18" stroke="rgb(255,0,250)" stroke-width="2" fill="none"></polyline>
 <polyline points="2444.1,982.935,5360.8,1064.79" stroke="rgb(0,114,255)" stroke-width="2" fill="none"></polyline>
-<polyline points="1920.12,987.747,6844.78,2262.04" stroke="rgb(101,255,0)" stroke-width="2" fill="none"></polyline>
+<polyline points="1920.12,987.747,6853.71,2211.56" stroke="rgb(101,255,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="1854.7,994.339,6439.26,1423.85" stroke="rgb(0,255,63)" stroke-width="2" fill="none"></polyline>
 <polyline points="2084.83,1001.45,5947.57,651.598" stroke="rgb(255,212,0)" stroke-width="2" fill="none"></polyline>
 <polyline points="1866.16,1009.12,6549.66,2033.27" stroke="rgb(255,0,76)" stroke-width="2" fill="none"></polyline>
@@ -258,7 +258,7 @@ width="8064px" height="3024px" preserveAspectRatio="xMinYMin meet" viewBox="0 0 
 <circle cx="1345.13" cy="203.157" r="4" stroke="rgb(63,0,255)" stroke-width="2" fill="none"></circle>
 <circle cx="6975.52" cy="1191.08" r="4" stroke="rgb(63,0,255)" stroke-width="2" fill="none"></circle>
 <circle cx="953.005" cy="218.244" r="4" stroke="rgb(233,255,0)" stroke-width="2" fill="none"></circle>
-<circle cx="6139.28" cy="649.749" r="4" stroke="rgb(233,255,0)" stroke-width="2" fill="none"></circle>
+<circle cx="5563.68" cy="1065.97" r="4" stroke="rgb(233,255,0)" stroke-width="2" fill="none"></circle>
 <circle cx="920.376" cy="242.871" r="4" stroke="rgb(216,255,0)" stroke-width="2" fill="none"></circle>
 <circle cx="5615.06" cy="537.498" r="4" stroke="rgb(216,255,0)" stroke-width="2" fill="none"></circle>
 <circle cx="1465.48" cy="264.512" r="4" stroke="rgb(0,246,255)" stroke-width="2" fill="none"></circle>
@@ -362,7 +362,7 @@ width="8064px" height="3024px" preserveAspectRatio="xMinYMin meet" viewBox="0 0 
 <circle cx="2429.38" cy="666.498" r="4" stroke="rgb(255,174,0)" stroke-width="2" fill="none"></circle>
 <circle cx="5461.42" cy="2318.9" r="4" stroke="rgb(255,174,0)" stroke-width="2" fill="none"></circle>
 <circle cx="2047.54" cy="669.924" r="4" stroke="rgb(255,0,191)" stroke-width="2" fill="none"></circle>
-<circle cx="6417.43" cy="820.467" r="4" stroke="rgb(255,0,191)" stroke-width="2" fill="none"></circle>
+<circle cx="6671.74" cy="1475.59" r="4" stroke="rgb(255,0,191)" stroke-width="2" fill="none"></circle>
 <circle cx="933.773" cy="671.85" r="4" stroke="rgb(250,255,0)" stroke-width="2" fill="none"></circle>
 <circle cx="5628.32" cy="2137.14" r="4" stroke="rgb(250,255,0)" stroke-width="2" fill="none"></circle>
 <circle cx="949.09" cy="678.1" r="4" stroke="rgb(208,255,0)" stroke-width="2" fill="none"></circle>
@@ -438,7 +438,7 @@ width="8064px" height="3024px" preserveAspectRatio="xMinYMin meet" viewBox="0 0 
 <circle cx="2444.1" cy="982.935" r="4" stroke="rgb(0,114,255)" stroke-width="2" fill="none"></circle>
 <circle cx="5360.8" cy="1064.79" r="4" stroke="rgb(0,114,255)" stroke-width="2" fill="none"></circle>
 <circle cx="1920.12" cy="987.747" r="4" stroke="rgb(101,255,0)" stroke-width="2" fill="none"></circle>
-<circle cx="6844.78" cy="2262.04" r="4" stroke="rgb(101,255,0)" stroke-width="2" fill="none"></circle>
+<circle cx="6853.71" cy="2211.56" r="4" stroke="rgb(101,255,0)" stroke-width="2" fill="none"></circle>
 <circle cx="1854.7" cy="994.339" r="4" stroke="rgb(0,255,63)" stroke-width="2" fill="none"></circle>
 <circle cx="6439.26" cy="1423.85" r="4" stroke="rgb(0,255,63)" stroke-width="2" fill="none"></circle>
 <circle cx="2084.83" cy="1001.45" r="4" stroke="rgb(255,212,0)" stroke-width="2" fill="none"></circle>
