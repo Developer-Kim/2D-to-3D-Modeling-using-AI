@@ -20,7 +20,7 @@ import numpy as np
 #import ssl
 import plyfile
 import cv2
-#from wmctrl import Window
+from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
@@ -54,6 +54,8 @@ Scene_dir = ""
 
 
 class Start(QThread):
+        when_step_finished = pyqtSignal(int)
+
         def __init__(self):
             QThread.__init__(self)
 
@@ -187,7 +189,7 @@ class Start(QThread):
                         os.mkdir(Scene_dir)
 
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
-            
+                    self.when_step_finished.emit(count)
                 elif count == 10:
                     break
 
@@ -731,9 +733,9 @@ class Ui_MainWindow(object):
         #capture 버튼 이벤트
         self.btn_capture.clicked.connect(self.captureFunc)
         #start 버튼 이벤트
-        self.btn_start.clicked.connect(self.startPipline)
+        self.btn_start.clicked.connect(lambda: self.startPipline(MainWindow))
         #previous 버튼 이벤트
-        self.btn_previous.clicked.connect(lambda: self.getPlyContainer(MainWindow))
+        #self.btn_previous.clicked.connect(lambda: self.getPlyContainer(MainWindow))
         #slider 이벤트
         self.horizontalSlider.valueChanged.connect(self.optionChecking)
         #comboBox 이벤트
@@ -915,31 +917,30 @@ class Ui_MainWindow(object):
             self.radioBtn_RL_7.setChecked(True)
 
     def getPlyContainer(self, MyWindow):
-        pass
-        # #ply viewer 생성  & ply 파일 read
-        # data = plyfile.PlyData.read('scene_dense.ply')['vertex']
-        # xyz = np.c_[data['x'], data['y'], data['z']]
-        # rgb = np.c_[data['red'], data['green'], data['blue']]
-        # self.v = pptk.viewer(xyz)
-        # self.v.set(point_size=0.0005)
-        # self.v.attributes(rgb / 255.)
+        #ply viewer 생성  & ply 파일 read
+        data = plyfile.PlyData.read('./output/Reconstruct/robust_colorized.ply')['vertex']
+        xyz = np.c_[data['x'], data['y'], data['z']]
+        rgb = np.c_[data['red'], data['green'], data['blue']]
+        self.v = pptk.viewer(xyz)
+        self.v.set(point_size=0.0005)
+        self.v.attributes(rgb / 255.)
         
-        # #캡쳐 버튼 활성화
-        # self.btn_capture.setEnabled(True)
+        #캡쳐 버튼 활성화
+        self.btn_capture.setEnabled(True)
 
-        # #터미널에서 viewer로 열린 window 잡아서 tab에 contain
-        # viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
-        # print(viewerWinID_str)
-        # window = QWindow.fromWinId(int(viewerWinID_str, 16))
-        # window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        # MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
-        # self.tab1.layout = QtWidgets.QVBoxLayout()
-        # self.tab1.layout.addWidget(MyWindow.windowcontainer)
-        # self.tab1.setLayout(self.tab1.layout)
-        # self.update()
-        # self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
+        #터미널에서 viewer로 열린 window 잡아서 tab에 contain
+        viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
+        print(viewerWinID_str)
+        window = QWindow.fromWinId(int(viewerWinID_str, 16))
+        window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
+        self.tab1.layout = QtWidgets.QVBoxLayout()
+        self.tab1.layout.addWidget(MyWindow.windowcontainer)
+        self.tab1.setLayout(self.tab1.layout)
+        self.update()
+        self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         
-    def startPipline(self):
+    def startPipline(self, MyWindow):
         # RCNN checkbox 확인
         if self.checkBox_rcnn.isChecked() == True:
             print("masking around the object")
@@ -949,8 +950,10 @@ class Ui_MainWindow(object):
         self.th.change_label.connect(self.lbl_pgsbStep.setText)
         self.th.start()
 
-        s = Start()
-        s.start()
+        self.s = Start()
+        self.s.when_step_finished.connect(lambda: self.getPlyContainer(MyWindow))
+        self.s.start()
+        
         print("STart")
         
     
