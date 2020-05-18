@@ -102,6 +102,8 @@ node [shape=circle]
  n49 --  n52
  n49 --  n51
  n49 --  n50
+ n47 --  n60
+ n47 --  n59
  n47 --  n57
  n47 --  n48
  n46 --  n48
@@ -142,7 +144,6 @@ node [shape=circle]
  n42 --  n58
  n42 --  n56
  n42 --  n55
- n42 --  n51
  n42 --  n48
  n42 --  n47
  n42 --  n46
@@ -174,6 +175,7 @@ node [shape=circle]
  n39 --  n45
  n39 --  n44
  n39 --  n42
+ n39 --  n41
  n39 --  n40
  n38 --  n48
  n38 --  n47
@@ -187,11 +189,12 @@ node [shape=circle]
  n38 --  n39
  n37 --  n69
  n37 --  n68
+ n37 --  n66
  n37 --  n65
- n37 --  n64
  n37 --  n63
  n37 --  n48
  n37 --  n47
+ n37 --  n45
  n37 --  n43
  n37 --  n41
  n37 --  n40
@@ -290,7 +293,6 @@ node [shape=circle]
  n30 --  n63
  n30 --  n62
  n30 --  n61
- n30 --  n38
  n30 --  n37
  n30 --  n36
  n30 --  n35
@@ -469,12 +471,15 @@ node [shape=circle]
  n22 --  n25
  n22 --  n24
  n22 --  n23
+ n21 --  n67
  n21 --  n62
  n21 --  n24
  n21 --  n23
  n21 --  n22
  n20 --  n69
+ n20 --  n68
  n20 --  n66
+ n20 --  n65
  n20 --  n63
  n20 --  n62
  n20 --  n61
@@ -500,6 +505,7 @@ node [shape=circle]
  n18 --  n19
  n17 --  n60
  n17 --  n51
+ n17 --  n49
  n17 --  n48
  n17 --  n45
  n17 --  n44
@@ -562,6 +568,7 @@ node [shape=circle]
  n14 --  n22
  n14 --  n16
  n14 --  n15
+ n13 --  n31
  n13 --  n30
  n13 --  n29
  n13 --  n28
@@ -575,7 +582,7 @@ node [shape=circle]
  n12 --  n13
  n11 --  n13
  n11 --  n12
- n10 --  n48
+ n10 --  n43
  n10 --  n13
  n10 --  n12
  n10 --  n11
@@ -643,9 +650,8 @@ node [shape=circle]
  n7 --  n35
  n7 --  n9
  n7 --  n8
+ n6 --  n59
  n6 --  n58
- n6 --  n57
- n6 --  n50
  n6 --  n47
  n6 --  n46
  n6 --  n45
@@ -813,7 +819,6 @@ node [shape=circle]
  n0 --  n49
  n0 --  n48
  n0 --  n47
- n0 --  n46
  n0 --  n45
  n0 --  n44
  n0 --  n43
@@ -822,7 +827,6 @@ node [shape=circle]
  n0 --  n40
  n0 --  n37
  n0 --  n17
- n0 --  n10
  n0 --  n8
  n0 --  n7
  n0 --  n6

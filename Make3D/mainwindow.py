@@ -14,10 +14,10 @@ import math
 import random
 import string
 import numpy as np
-#import skimage.io
-#import matplotlib
-#import matplotlib.pyplot as plt
-#import ssl
+import skimage.io
+import matplotlib
+import matplotlib.pyplot as plt
+import ssl
 import plyfile
 import cv2
 #from wmctrl import Window
@@ -25,6 +25,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
 from PyQt5.QtCore import Qt, QThread, QWaitCondition, QMutex, pyqtSignal, QObject
+
+from Mask_RCNN.detect import detection
 
 #option Dictionary 
 # ex option["features"]["-m"] = SIFT
@@ -51,6 +53,10 @@ ChangeWhite_dir = ""
 matches_dir = ""
 reconstruction_dir = ""
 Scene_dir = ""
+Mvs_dir = ""
+
+
+mrcnn_swt = False
 
 
 class Start(QThread):
@@ -62,12 +68,17 @@ class Start(QThread):
 
         def run(self):
             global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir, OPENMVG_SFM_BIN, input_dir, camera_file_params, program_dir, option
+            global mrcnn_swt
             #============================================================================
             count = 0
             pSteps = None
 
             while True:
-                if count == 0:
+                if mrcnn_swt == True:
+                    print ("0. Make mask Image")
+                    detection.Make_Mask()
+
+                elif count == 0:
                     print ("1. Intrinsics analysis")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
                 
@@ -182,23 +193,50 @@ class Start(QThread):
                 elif count == 8:
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
 
-                elif count == 9:
+                elif count == 10:
                     if not os.path.exists(Scene_dir):
                         os.mkdir(Scene_dir)
 
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
             
-                elif count == 10:
+                elif count == 11:
+                    OPENMVS_BIN = Scene_dir
+
+                    # param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud")] + option["densify"])
+                    
+                    # pSteps = subprocess.Popen( [os.path.join(OPENMVS_BIN, "DensifyPointCloud"),  
+
+
+                    #         os.path.join(OPENMVS_BIN,"DensifyPointCloud"),
+                    #     ["--resolution-level", "2", "scene.mvs", "-w","%mvs_dir%"]],
+                    # [   "Reconstruct the mesh",
+                    #     os.path.join(OPENMVS_BIN,"ReconstructMesh"),
+                    #     ["-d", "6", "scene_dense.mvs", "-w","%mvs_dir%"]],
+                    # [   "Refine the mesh",
+                    #     os.path.join(OPENMVS_BIN,"RefineMesh"),
+                    #     ["--resolution-level", "2", "--max-face-area", "16", "scene_dense_mesh.mvs", "-w","%mvs_dir%"]],
+                    # [   "Texture the mesh",
+                    #     os.path.join(OPENMVS_BIN,"TextureMesh"),
+                    #     ["--resolution-level", "2", "scene_dense_mesh_refine.mvs", "-w","%mvs_dir%"]]
+                    # ]
                     break
 
-                while True:
-                    if pSteps.poll() is not None:
-                        print("Finish===============================")
-                        count += 1
-                        break
+                if not mrcnn_swt:
+                    while True:   
+                        if pSteps.poll() is not None:
+                            print("Finish===============================")
+                            count += 1
+                            break
+
+                else:
+                    while True:
+                        if detection.poll():
+                            mrcnn_swt = False
+                            print("Finish===============================")
+                            break 
 
 class Thread(QThread):
-    global output_dir
+    global output_dir, mrcnn_swt
     # 사용자 정의 시그널 선언
     change_value = pyqtSignal(int)
     change_label = pyqtSignal(str)
@@ -244,6 +282,8 @@ class Thread(QThread):
 
                     if not step:
                         continue
+                    elif step == "- Make Mask_Image -":
+                        self.change_label.emit("Mask Iamge (0/9)")
                     elif step == "- Feature -":
                         self.change_label.emit("Feature (1/9)")
                     elif step == "- Export Feature -":
@@ -271,15 +311,6 @@ class Thread(QThread):
                     #     percent = 0
                         #break
 
-
-    def toggle_status(self):
-        self._status = not self._status
-        if self._status:
-            self.cond.wakeAll()
-
-    @property
-    def status(self):
-        return self._status
     
     
 class ImageListDialog(QDialog):
@@ -940,17 +971,20 @@ class Ui_MainWindow(object):
         # self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         
     def startPipline(self):
+        global mrcnn_swt
+
         # RCNN checkbox 확인
         if self.checkBox_rcnn.isChecked() == True:
             print("masking around the object")
-
+            mrcnn_swt = True
+        
         self.th = Thread()
         self.th.change_value.connect(self.updateProgressBar)
         self.th.change_label.connect(self.lbl_pgsbStep.setText)
         self.th.start()
 
-        s = Start()
-        s.start()
+        self.s = Start()
+        self.s.start()
         print("STart")
         
     
@@ -1003,12 +1037,12 @@ class Ui_MainWindow(object):
         matches_dir = os.path.join(output_dir, "Matches")
         reconstruction_dir = os.path.join(output_dir, "Reconstruct")
         Scene_dir = os.path.join(output_dir,"Scene")
+        Mvs_dir = os.path.join(output_dir,"Mvs")
         
         # Create the ouput/matches folder if not present
         if not os.path.exists(matches_dir):
             os.mkdir(matches_dir)
 
-        print(output_dir)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
