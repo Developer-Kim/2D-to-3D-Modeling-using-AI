@@ -74,7 +74,7 @@ class Start(QThread):
             #============================================================================
             count = 0
             pSteps = None
-
+            ends = False
             while True:
                 if mrcnn_swt == True:
                     print ("0. Make mask Image")
@@ -194,6 +194,7 @@ class Start(QThread):
             
                 elif count == 8:
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
+                    self.when_step_finished.emit(count)
 
                 elif count == 10:
                     if not os.path.exists(Scene_dir):
@@ -203,34 +204,58 @@ class Start(QThread):
 
             
                 elif count == 11:
-                    OPENMVS_BIN = Scene_dir
+                    print("7. Densify Point Cloud")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud"), "scene.mvs","-w", Scene_dir])
 
-                    # param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud")] + option["densify"])
+                    for op in option["densify"]:
+                        param.append(op)
+                        param.append(option["densify"][op])
                     
-                    # pSteps = subprocess.Popen( [os.path.join(OPENMVS_BIN, "DensifyPointCloud"),  
+                    pSteps = subprocess.Popen(param) 
+                
+                elif count == 12:
+                    print("8. Reconstruct the mesh")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir])
+                    
+                    for op in option["mesh"]:
+                        param.append(op)
+                        param.append(option["mesh"][op])
 
+                    pSteps = subprocess.Popen(param) 
+                
+                elif count == 13:
+                    print("9. Refine the mesh")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir])
+                    
+                    for op in option["refine"]:
+                        param.append(op)
+                        param.append(option["refine"][op])
 
-                    #         os.path.join(OPENMVS_BIN,"DensifyPointCloud"),
-                    #     ["--resolution-level", "2", "scene.mvs", "-w","%mvs_dir%"]],
-                    # [   "Reconstruct the mesh",
-                    #     os.path.join(OPENMVS_BIN,"ReconstructMesh"),
-                    #     ["-d", "6", "scene_dense.mvs", "-w","%mvs_dir%"]],
-                    # [   "Refine the mesh",
-                    #     os.path.join(OPENMVS_BIN,"RefineMesh"),
-                    #     ["--resolution-level", "2", "--max-face-area", "16", "scene_dense_mesh.mvs", "-w","%mvs_dir%"]],
-                    # [   "Texture the mesh",
-                    #     os.path.join(OPENMVS_BIN,"TextureMesh"),
-                    #     ["--resolution-level", "2", "scene_dense_mesh_refine.mvs", "-w","%mvs_dir%"]]
-                    # ]
-                    break
+                    pSteps = subprocess.Popen(param)
+                
+                elif count == 14:
+                    print("10. Texture the mesh")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir])
+                    
+                    for op in option["texture"]:
+                        param.append(op)
+                        param.append(option["texture"][op])
 
+                    pSteps = subprocess.Popen(param)
+                    ends = True
                 if not mrcnn_swt:
                     while True:   
                         if pSteps.poll() is not None:
                             print("Finish===============================")
                             count += 1
                             break
-
+                elif ends == True:
+                    return
+                    
                 else:
                     while True:
                         if detection.poll():
@@ -750,7 +775,7 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.lbl_pgsbStep = QtWidgets.QLabel("",self.statusbar)
-        self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 200, 20))
+        self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 400, 20))
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -972,7 +997,7 @@ class Ui_MainWindow(object):
         self.update()
         self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         
-    def startPipline(self):
+    def startPipline(self, MyWindow):
         global mrcnn_swt
 
         # RCNN checkbox 확인
@@ -986,8 +1011,9 @@ class Ui_MainWindow(object):
         self.th.start()
 
         self.s = Start()
+        self.s.when_step_finished.connect(lambda: self.getPlyContainer(MyWindow))
         self.s.start()
-        print("STart")
+        print("Start")
         
     
     def selectOptionFunc(self, pipNum, signal):
