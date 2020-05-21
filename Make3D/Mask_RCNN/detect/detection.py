@@ -40,7 +40,7 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_car_0100.h5")
 #    utils.download_trained_weights(COCO_MODEL_PATH)
 
 # Directory of images to run detection on
-IMAGE_DIR = os.path.abspath("./Images_car")
+IMAGE_DIR = os.path.abspath("./Image")
 
 class InferenceConfig(car.CarConfig):
     # Set batch size to 1 since we'll be running inference on
@@ -111,32 +111,33 @@ def Make_Mask():
 
             # 해당 이미지의 mask 좌표를 얻어오고, 재조합
             r = results[0]
-
-            img_ = visualize.apply_mask(image, r['masks'], )
-            
-            skimage.io.imshow()
-            # # Just apply mask then save images
-            # print_img = visualize.apply_mask_instances(image, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'],None,None,None,None,None,[(1.0,1.0,1.0)])
-            # skimage.io.imsave(saved_file_name,print_img)
-            
-            if r['scores'] > 0.98:
-                score_lst.append([r['scores'], "Success"])
-                lists = dict()
-                for i in range(0, len(r['masks'])):
-                    data = [pos for pos, val in enumerate(r['masks'][i]) if val == True]
-                    if len(data) != 0:
-                        lists[i] = data
-
-                pos = list()
-                for i in lists:
-                        for j in lists[i]:
-                            pos.append([i,j])
-
-                pos = np.array(pos, np.int32)
-
-                # 해당 이미지의 좌표를 통해 mask 제작
+	        
+            if r:
                 img = np.zeros((image.shape[1],image.shape[0]),np.uint8)
-                img = cv2.polylines(img, [pos], False, (255, 255, 255), 1)
+
+                for i in range(len(r['scores'])):
+
+                    if r['scores'][i] > 0.98:
+                        score_lst.append([r['scores'][i], "Success"])
+                        lists = dict()
+
+                        for j in range(0, len(r['masks'])):
+                            data = [pos for pos, val in enumerate(r['masks'][j]) if val[i] == True]
+                            if len(data) != 0:
+                                lists[j] = data
+
+                        pos_ = list()
+                        for j in lists:
+                                for k in lists[j]:
+                                    pos_.append([j,k])
+
+                        pos_ = np.array(pos_, np.int32)
+
+                        # 해당 이미지의 좌표를 통해 mask 제작
+                        img = cv2.polylines(img, [pos_], False, (255, 255, 255), 1)
+                    else:
+                        score_lst.append([r['scores'], "Fail"])
+                        fail += 1
 
                 # 마스크를 좌우반전 및 로테이션 작업을 통해 기존의 사진과 일치시킴
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -163,13 +164,9 @@ def Make_Mask():
                 rotated_mat = cv2.warpAffine(img_flip, rotation_mat, (bound_w, bound_h))
 
                 # 사진 저장
-                mask_png = IMAGE_DIR+"/Mask/"+ name[:-4]+"_mask.png"
+                mask_png = IMAGE_DIR+"/"+ name[:-4]+"_mask.png"
                 cv2.imwrite(mask_png, rotated_mat)
             
-            else:
-                score_lst.append([r['scores'], "Fail"])
-                fail += 1
-
             t.seek(0)
             t.writelines("\n")
             t.writelines("- Make Mask_Image -\n")
