@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import ssl
 import plyfile
 import cv2
-from wmctrl import Window
+# from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
@@ -972,7 +972,7 @@ class Ui_MainWindow(object):
         self.update()
         self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
         
-    def startPipline(self):
+    def startPipline(self, MainWindow):
         global mrcnn_swt
 
         # RCNN checkbox 확인

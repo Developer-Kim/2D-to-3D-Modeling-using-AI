@@ -40,7 +40,7 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_car_0100.h5")
 #    utils.download_trained_weights(COCO_MODEL_PATH)
 
 # Directory of images to run detection on
-IMAGE_DIR = os.path.abspath("./Images_car")
+IMAGE_DIR = os.path.abspath("./Image")
 
 class InferenceConfig(car.CarConfig):
     # Set batch size to 1 since we'll be running inference on
@@ -163,7 +163,7 @@ def Make_Mask():
                 rotated_mat = cv2.warpAffine(img_flip, rotation_mat, (bound_w, bound_h))
 
                 # 사진 저장
-                mask_png = IMAGE_DIR+"/Mask/"+ name[:-4]+"_mask.png"
+                mask_png = IMAGE_DIR+"/"+ name[:-4]+"_mask.png"
                 cv2.imwrite(mask_png, rotated_mat)
             
             else:
