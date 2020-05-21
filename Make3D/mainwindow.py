@@ -39,6 +39,9 @@ option["mesh"] = dict()
 option["refine"] = dict()
 option["texture"] = dict()
 
+WinID = []
+stepCount = 0
+
 imgNum = 0
 
 program_dir = os.getcwd()
@@ -60,7 +63,7 @@ mrcnn_swt = False
 
 
 class Start(QThread):
-        when_step_finished = pyqtSignal(int)
+        when_step_finished = pyqtSignal()
 
         def __init__(self):
             QThread.__init__(self)
@@ -74,7 +77,7 @@ class Start(QThread):
             #============================================================================
             count = 0
             pSteps = None
-
+            ends = False
             while True:
                 if mrcnn_swt == True:
                     print ("0. Make mask Image")
@@ -83,11 +86,12 @@ class Start(QThread):
                 elif count == 0:
                     print ("1. Intrinsics analysis")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
-                
+
                 #====================================================================
                 # Features 옵션 설정
             
                 elif count == 1:
+
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
 
                     for op in option["features"]:
@@ -100,6 +104,7 @@ class Start(QThread):
                 elif count == 2:
                     #====================================================================
                     # 특징점 캡쳐
+
                     pFeature_dir = os.path.join(output_dir, "FeatureImage")
                     if not os.path.exists(pFeature_dir):
                         os.mkdir(pFeature_dir)
@@ -124,6 +129,7 @@ class Start(QThread):
                 elif count == 4:
                     #====================================================================
                     # 매칭점 캡쳐
+
                     pMatches_dir = os.path.join(output_dir, "MatchImage")
                     if not os.path.exists(pMatches_dir):
                         os.mkdir(pMatches_dir)
@@ -133,6 +139,7 @@ class Start(QThread):
                     pSteps = subprocess.Popen( param )
 
                 elif count == 5:
+
                     # Create the reconstruction if not present
                     if not os.path.exists(reconstruction_dir):
                         os.mkdir(reconstruction_dir)
@@ -196,6 +203,8 @@ class Start(QThread):
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
 
                 elif count == 10:
+                    self.when_step_finished.emit()
+
                     if not os.path.exists(Scene_dir):
                         os.mkdir(Scene_dir)
 
@@ -203,34 +212,64 @@ class Start(QThread):
 
             
                 elif count == 11:
-                    OPENMVS_BIN = Scene_dir
+                    print("7. Densify Point Cloud")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud"), "scene.mvs","-w", Scene_dir])
 
-                    # param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud")] + option["densify"])
+                    for op in option["densify"]:
+                        param.append(op)
+                        param.append(option["densify"][op])
                     
-                    # pSteps = subprocess.Popen( [os.path.join(OPENMVS_BIN, "DensifyPointCloud"),  
+                    param.append("--estimate-normals")
+                    param.append("1")
+                    pSteps = subprocess.Popen(param) 
 
+                elif count == 12:
+                    self.when_step_finished.emit()
 
-                    #         os.path.join(OPENMVS_BIN,"DensifyPointCloud"),
-                    #     ["--resolution-level", "2", "scene.mvs", "-w","%mvs_dir%"]],
-                    # [   "Reconstruct the mesh",
-                    #     os.path.join(OPENMVS_BIN,"ReconstructMesh"),
-                    #     ["-d", "6", "scene_dense.mvs", "-w","%mvs_dir%"]],
-                    # [   "Refine the mesh",
-                    #     os.path.join(OPENMVS_BIN,"RefineMesh"),
-                    #     ["--resolution-level", "2", "--max-face-area", "16", "scene_dense_mesh.mvs", "-w","%mvs_dir%"]],
-                    # [   "Texture the mesh",
-                    #     os.path.join(OPENMVS_BIN,"TextureMesh"),
-                    #     ["--resolution-level", "2", "scene_dense_mesh_refine.mvs", "-w","%mvs_dir%"]]
-                    # ]
-                    break
+                    print("8. Reconstruct the mesh")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir])
+                    
+                    for op in option["mesh"]:
+                        param.append(op)
+                        param.append(option["mesh"][op])
 
+                    pSteps = subprocess.Popen(param) 
+                
+                elif count == 13:
+                    print("9. Refine the mesh")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir])
+                    
+                    for op in option["refine"]:
+                        param.append(op)
+                        param.append(option["refine"][op])
+
+                    pSteps = subprocess.Popen(param)
+
+                elif count == 14:
+                    self.when_step_finished.emit()
+
+                    print("10. Texture the mesh")
+                    OPENMVS_BIN = OPENMVG_SFM_BIN
+                    param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir])
+                    
+                    for op in option["texture"]:
+                        param.append(op)
+                        param.append(option["texture"][op])
+
+                    pSteps = subprocess.Popen(param)
+                    ends = True
                 if not mrcnn_swt:
                     while True:   
                         if pSteps.poll() is not None:
                             print("Finish===============================")
                             count += 1
                             break
-
+                elif ends == True:
+                    self.when_step_finished.emit()
+                    return
                 else:
                     while True:
                         if detection.poll():
@@ -315,7 +354,24 @@ class Thread(QThread):
                         #break
 
     
+class QRDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setupUI()
     
+    def setupUI(self):
+        self.setGeometry(600, 200, 300, 300)
+        self.setWindowTitle("Open on a Browser")
+        self.centralWidget = QtWidgets.QWidget(self)
+
+        self.label = QtWidgets.QLabel(self.centralWidget)
+        self.label.setGeometry(QtCore.QRect(0,0,300,300))
+        pixmap = QtGui.QPixmap()
+        pixmap.load("QRCode.png")
+        pixmap = pixmap.scaled(300, 300)
+        self.label.setPixmap(pixmap)
+
+
 class ImageListDialog(QDialog):
     def __init__(self, signal):
         super().__init__()
@@ -702,13 +758,9 @@ class Ui_MainWindow(object):
         self.tabs = QtWidgets.QTabWidget(self.v2_widget)
         self.tabs.setGeometry(QtCore.QRect(10, 10, 1250, 750))
         self.tab1 = QtWidgets.QWidget()
-        self.tab2 = QtWidgets.QWidget()
-        self.tab3 = QtWidgets.QWidget()
-        self.tab4 = QtWidgets.QWidget()
+        
         self.tabs.addTab(self.tab1, "Point Cloud")
-        self.tabs.addTab(self.tab2, "Densify Point Cloud")
-        self.tabs.addTab(self.tab3, "Mesh")
-        self.tabs.addTab(self.tab4, "Texture")
+       
 
         #capture button
         self.btn_capture = QtWidgets.QPushButton(self.v2_widget)
@@ -731,9 +783,10 @@ class Ui_MainWindow(object):
         self.btn_start = QtWidgets.QPushButton(self.v3_widget)
         self.btn_start.setGeometry(QtCore.QRect(1350, 10, 120, 30))
         self.btn_start.setObjectName("btn_start")
-        self.btn_previous = QtWidgets.QPushButton(self.v3_widget)
-        self.btn_previous.setGeometry(QtCore.QRect(1270, 10, 70, 30))
-        self.btn_previous.setObjectName("btn_previous")
+        self.btn_QR = QtWidgets.QPushButton(self.v3_widget)
+        self.btn_QR.setGeometry(QtCore.QRect(1290, 10, 50, 30))
+        self.btn_QR.setObjectName("btn_QR")
+        self.btn_QR.setEnabled(True)
         self.verticalLayout_3.addWidget(self.v3_widget)
         self.btn_fImage = QtWidgets.QPushButton(self.v2_widget)
         self.btn_fImage.setGeometry(QtCore.QRect(970, 0, 120, 30))
@@ -750,7 +803,7 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.lbl_pgsbStep = QtWidgets.QLabel("",self.statusbar)
-        self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 200, 20))
+        self.lbl_pgsbStep.setGeometry(QtCore.QRect(25, 0, 400, 20))
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -766,8 +819,8 @@ class Ui_MainWindow(object):
         self.btn_capture.clicked.connect(self.captureFunc)
         #start 버튼 이벤트
         self.btn_start.clicked.connect(lambda: self.startPipline(MainWindow))
-        #previous 버튼 이벤트
-        #self.btn_previous.clicked.connect(lambda: self.getPlyContainer(MainWindow))
+        #QR 버튼 이벤트
+        self.btn_QR.clicked.connect(self.openQRDialog)
         #slider 이벤트
         self.horizontalSlider.valueChanged.connect(self.optionChecking)
         #comboBox 이벤트
@@ -816,6 +869,10 @@ class Ui_MainWindow(object):
         self.v.capture('screeshot'+ str(imgNum) +'.png')
         imgNum = imgNum + 1
         print("captured")
+
+    def openQRDialog(self):
+        Q_dlg = QRDialog()
+        Q_dlg.exec_()
 
     def openImageDialog(self, signal):
         if signal == "f":
@@ -950,29 +1007,79 @@ class Ui_MainWindow(object):
 
     def getPlyContainer(self, MyWindow):
         #ply viewer 생성  & ply 파일 read
-        data = plyfile.PlyData.read('./output/Reconstruct/robust_colorized.ply')['vertex']
-        xyz = np.c_[data['x'], data['y'], data['z']]
-        rgb = np.c_[data['red'], data['green'], data['blue']]
-        self.v = pptk.viewer(xyz)
-        self.v.set(point_size=0.0005)
-        self.v.attributes(rgb / 255.)
+        global stepCount, WinID
+
+        stepCount += 1
         
+        if stepCount == 1:
+            data = plyfile.PlyData.read('./output/Reconstruct/robust_colorized.ply')['vertex']
+            xyz = np.c_[data['x'], data['y'], data['z']]
+            rgb = np.c_[data['red'], data['green'], data['blue']]
+            self.v = pptk.viewer(xyz)
+            self.v.set(point_size=0.0005)
+            self.v.attributes(rgb / 255.)
+        elif stepCount == 2:
+            data = plyfile.PlyData.read('./output/Scene/scene_dense.ply')['vertex']
+            xyz = np.c_[data['x'], data['y'], data['z']]
+            rgb = np.c_[data['red'], data['green'], data['blue']]
+            self.v = pptk.viewer(xyz)
+            self.v.set(point_size=0.0005)
+            self.v.attributes(rgb / 255.)
+        elif stepCount == 3:
+            data = plyfile.PlyData.read('./output/Scene/scene_dense_mesh_refine.ply')['vertex']
+            xyz = np.c_[data['x'], data['y'], data['z']]
+            self.v = pptk.viewer(xyz)
+            #self.v.set(point_size=0.0005)
+        elif stepCount == 4:
+            data = plyfile.PlyData.read('./output/Scene/scene_dense_mesh_refine_texture.ply')['vertex']
+            xyz = np.c_[data['x'], data['y'], data['z']]
+            self.v = pptk.viewer(xyz)
+            #self.v.set(point_size=0.0005)
+
         #캡쳐 버튼 활성화
         self.btn_capture.setEnabled(True)
 
         #터미널에서 viewer로 열린 window 잡아서 tab에 contain
+        viewerWinID_str = ""
         viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
+        print("==================================")
         print(viewerWinID_str)
+        print("==================================")
+
         window = QWindow.fromWinId(int(viewerWinID_str, 16))
         window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
-        self.tab1.layout = QtWidgets.QVBoxLayout()
-        self.tab1.layout.addWidget(MyWindow.windowcontainer)
-        self.tab1.setLayout(self.tab1.layout)
-        self.update()
-        self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
+        if stepCount == 1:
+            self.tab1.layout = QtWidgets.QVBoxLayout()
+            self.tab1.layout.addWidget(MyWindow.windowcontainer)
+            self.tab1.setLayout(self.tab1.layout)
+            self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
+        elif stepCount == 2:
+            self.tab2 = QtWidgets.QWidget()
+            self.tab2.layout = QtWidgets.QVBoxLayout()
+            self.tab2.layout.addWidget(MyWindow.windowcontainer)
+            self.tab2.setLayout(self.tab2.layout)
+            self.tabs.addTab(self.tab2, "Densify Point Cloud")
+        elif stepCount == 3:
+            self.tab3 = QtWidgets.QWidget()
+            self.tab3.layout = QtWidgets.QVBoxLayout()
+            self.tab3.layout.addWidget(MyWindow.windowcontainer)
+            self.tab3.setLayout(self.tab3.layout)
+            self.tabs.addTab(self.tab3, "Mesh")
+        elif stepCount == 4:
+            self.tab4 = QtWidgets.QWidget()
+            self.tab4.layout = QtWidgets.QVBoxLayout()
+            self.tab4.layout.addWidget(MyWindow.windowcontainer)
+            self.tab4.setLayout(self.tab4.layout)
+            self.tabs.addTab(self.tab4, "Texture")
+
+        self.tabs.addWidget()
         
+<<<<<<< HEAD
     def startPipline(self, MainWindow):
+=======
+    def startPipline(self, MyWindow):
+>>>>>>> c9bc72f9585dd994bf1d45616c26a02731f82c92
         global mrcnn_swt
 
         # RCNN checkbox 확인
@@ -986,10 +1093,10 @@ class Ui_MainWindow(object):
         self.th.start()
 
         self.s = Start()
+        self.s.when_step_finished.connect(lambda: self.getPlyContainer(MyWindow))
         self.s.start()
-        print("STart")
-        
-    
+        print("Start")
+
     def selectOptionFunc(self, pipNum, signal):
         if pipNum == "features":
             if signal == "-m":
@@ -1048,7 +1155,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Coffee is Venti"))
         self.btn_outputPath.setText(_translate("MainWindow", "Output Path"))
         self.comboBox.setItemText(0, _translate("MainWindow", "Compute Features"))
         self.comboBox.setItemText(1, _translate("MainWindow", "Compute Matches"))
@@ -1134,7 +1241,7 @@ class Ui_MainWindow(object):
         self.btn_capture.setIcon(QtGui.QIcon('capture.png'))
         self.btn_capture.setIconSize(QtCore.QSize(24,24))
         self.btn_start.setText(_translate("MainWindow", "Start"))
-        self.btn_previous.setText(_translate("MainWindow", "Previous"))
+        self.btn_QR.setText(_translate("MainWindow", "QR"))
         self.btn_fImage.setIcon(QtGui.QIcon('imageIcon.png'))
         self.btn_fImage.setIconSize(QtCore.QSize(24,24))
         self.btn_fImage.setText(_translate("MainWindow", " Features"))
