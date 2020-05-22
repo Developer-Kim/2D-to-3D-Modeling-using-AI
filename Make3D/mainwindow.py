@@ -148,16 +148,32 @@ class Start(QThread):
                     file_list = os.listdir(input_dir)
                     if not os.path.exists(ChangeWhite_dir):
                         os.mkdir(ChangeWhite_dir)
+
+                    mask_list = set()
+                    no_mask_list = set()
+                    for str in file_list:
+                        if "_mask" in str:
+                            mask_list.add(str)
+                        else:
+                            str = str[:-4] + "_mask.png"
+                            no_mask_list.add(str)
                         
+                    lst = list(no_mask_list - mask_list)
+                    print(lst)
+                    for i in range(len(lst)):
+                        lst[i] = lst[i][:-9] + ".JPG"
+
+                    print(lst)
                     for str in file_list:
                         path = input_dir + str
                         if "_mask" in str:
-                            color_dir = input_dir + str[:-9] + ".jpg"
-                            
+                            color_dir = input_dir + str[:-9] + ".JPG"
+                            print(color_dir)
                             mask = cv2.imread(path, 0)
                             img = cv2.imread(color_dir)
                             
                             m_height, m_width = mask.shape
+                            print(img.shape)
                             i_height, i_width, _ = img.shape
                             
                             if m_height == i_height and m_width == i_width: 
@@ -175,9 +191,17 @@ class Start(QThread):
                                 
                                 weighted_img = cv2.add(res, img_white)
                                 
-                                mask_png = ChangeWhite_dir + "/" + str[:-9] + ".jpg"
+                                mask_png = ChangeWhite_dir + "/" + str[:-9] + ".JPG"
                                 
                                 cv2.imwrite(mask_png, weighted_img)
+                        elif str in lst:
+                            color_dir = input_dir + str
+                            print(color_dir)
+                            img = cv2.imread(color_dir)
+                            str = str[:-4] + ".JPG"
+                            print(ChangeWhite_dir + "/" + str)
+                            
+                            cv2.imwrite(ChangeWhite_dir + "/" + str, img)
 
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
 
@@ -203,15 +227,15 @@ class Start(QThread):
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
 
                 elif count == 10:
-                    self.when_step_finished.emit()
-
                     if not os.path.exists(Scene_dir):
                         os.mkdir(Scene_dir)
 
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
-
+                    print(pSteps)
             
                 elif count == 11:
+                    self.when_step_finished.emit()
+
                     print("7. Densify Point Cloud")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
                     param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud"), "scene.mvs","-w", Scene_dir])
@@ -229,7 +253,7 @@ class Start(QThread):
 
                     print("8. Reconstruct the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
-                    param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir])
+                    param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir, "--export-type", "obj"])
                     
                     for op in option["mesh"]:
                         param.append(op)
@@ -240,7 +264,7 @@ class Start(QThread):
                 elif count == 13:
                     print("9. Refine the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
-                    param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir])
+                    param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir, "--export-type", "obj"])
                     
                     for op in option["refine"]:
                         param.append(op)
@@ -253,7 +277,7 @@ class Start(QThread):
 
                     print("10. Texture the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
-                    param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir])
+                    param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir, "--export-type", "obj"])
                     
                     for op in option["texture"]:
                         param.append(op)
@@ -261,11 +285,13 @@ class Start(QThread):
 
                     pSteps = subprocess.Popen(param)
                     ends = True
+
                 if not mrcnn_swt:
                     while True:   
                         if pSteps.poll() is not None:
-                            print("Finish===============================")
+                            print("!!!!Finish===============================")
                             count += 1
+                            print(count)
                             break
                 elif ends == True:
                     self.when_step_finished.emit()
@@ -274,7 +300,7 @@ class Start(QThread):
                     while True:
                         if detection.poll():
                             mrcnn_swt = False
-                            print("Finish===============================")
+                            print("@@@@Finish===============================")
                             break 
 
 class Thread(QThread):
