@@ -1,3 +1,43 @@
+# ===============================================================================
+# Copyright (c) 2013 Pierre Moulon, Bruno Duisit.
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# ===============================================================================
+
+# ===============================================================================
+# Copyright (c) 2014-2015 SEACAVE
+# *
+# * Author(s):
+# *
+# *      cDc <cdc.seacave@gmail.com>
+# *
+# *
+# * This program is free software: you can redistribute it and/or modify
+# * it under the terms of the GNU Affero General Public License as published by
+# * the Free Software Foundation, either version 3 of the License, or
+# * (at your option) any later version.
+# *
+# * This program is distributed in the hope that it will be useful,
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# * GNU Affero General Public License for more details.
+# *
+# * You should have received a copy of the GNU Affero General Public License
+# * along with this program.  If not, see <http://www.gnu.org/licenses/>
+# ===============================================================================
+
+
+#=================   Mask R-CNN   ========================
+#
+# The main Mask R-CNN model implementation.
+
+# Copyright (c) 2017 Matterport, Inc.
+# Licensed under the MIT License (see LICENSE for details)
+# Written by Waleed Abdulla
+#=========================================================
+
 # -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
@@ -5,6 +45,7 @@
 # Created by: PyQt5 UI code generator 5.14.0
 #
 # WARNING! All changes made in this file will be lost!
+
 
 import os
 import subprocess
