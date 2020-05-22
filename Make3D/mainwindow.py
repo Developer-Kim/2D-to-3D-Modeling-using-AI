@@ -78,6 +78,7 @@ class Start(QThread):
             count = 0
             pSteps = None
             ends = False
+
             while True:
                 if mrcnn_swt == True:
                     print ("0. Make mask Image")
@@ -139,7 +140,6 @@ class Start(QThread):
                     pSteps = subprocess.Popen( param )
 
                 elif count == 5:
-
                     # Create the reconstruction if not present
                     if not os.path.exists(reconstruction_dir):
                         os.mkdir(reconstruction_dir)
@@ -149,60 +149,79 @@ class Start(QThread):
                     if not os.path.exists(ChangeWhite_dir):
                         os.mkdir(ChangeWhite_dir)
 
-                    mask_list = set()
-                    no_mask_list = set()
+
+                    extension = ""              # 확장자
+                    mask_list = set()           # 마스크 리스트
+                    no_mask_list = set()        # 마스크가 없는 사진 리스트
+
+                    #=====================================
+                    # 마스크 사진이 없는 사진들 리스트 뽑아오기
+                    #=====================================
+
                     for str in file_list:
                         if "_mask" in str:
                             mask_list.add(str)
                         else:
+                            if str[-4] == '.':
+                                extension = str[-4:]
                             str = str[:-4] + "_mask.png"
-                            no_mask_list.add(str)
-                        
-                    lst = list(no_mask_list - mask_list)
-                    print(lst)
-                    for i in range(len(lst)):
-                        lst[i] = lst[i][:-9] + ".JPG"
+                            no_mask_list.add(str)                    
 
-                    print(lst)
+                    lst = list(no_mask_list - mask_list)
+
+                    for i in range(len(lst)):
+                        lst[i] = lst[i][:-9] + extension
+                    
+                    
                     for str in file_list:
                         path = input_dir + str
-                        if "_mask" in str:
-                            color_dir = input_dir + str[:-9] + ".JPG"
-                            print(color_dir)
-                            mask = cv2.imread(path, 0)
-                            img = cv2.imread(color_dir)
-                            
-                            m_height, m_width = mask.shape
-                            print(img.shape)
-                            i_height, i_width, _ = img.shape
-                            
-                            if m_height == i_height and m_width == i_width: 
-                                # 마스크를 적용시킨 하얀색 배경 사진
-                                #matrix = cv2.getRotationMatrix2D((i_width/2, i_height/2), 90, 1)
 
-                                #dst = cv2.warpAffine(img, matrix, (i_width, i_height))
-                                #i = i_width/2 - i_height/2
-                                #M = np.float32([[1, 0, -i], [0, 1, i]])
-                                #img_translation = cv2.warpAffine(dst, M, (i_height, i_width))
+                        #============================================
+                        #           배경이 하얀색인 사진 뽑아오기
+                        #============================================
+                        if "_mask" in str:
+                            # 컬러 사진 로드
+                            color_dir = input_dir + str[:-9] + extension
+                            img = cv2.imread(color_dir)
+                            # 마스크 사진 로드
+                            mask = cv2.imread(path, 0)
+                            
+                            # 이미지, 마스크 Shape
+                            i_height, i_width, _ = img.shape
+                            m_height, m_width = mask.shape
+                            
+                            # 마스크 사진과 컬러 사진 크기 동일할 시.
+                            if m_height == i_height and m_width == i_width: 
+
+                                # 마스크를 적용시킨 하얀색 배경 사진 뽑아오기
                                 img_white = ~mask
                                 img_white = cv2.cvtColor(img_white, cv2.COLOR_GRAY2BGR)
                             
+                                # 비트마스크를 적용
                                 res = cv2.bitwise_and(img, img, mask = mask)
                                 
+                                # 가중치를 적용하여 배경이 제거된 하얀색 배경 추출.
                                 weighted_img = cv2.add(res, img_white)
                                 
-                                mask_png = ChangeWhite_dir + "/" + str[:-9] + ".JPG"
-                                
+                                # 경로 지정
+                                mask_png = ChangeWhite_dir + "/" + str[:-9] + extension
+            
+                                # 사진 Write
                                 cv2.imwrite(mask_png, weighted_img)
+
+                        #============================================
+                        #       마스크 없는 사진은 그대로 넣어주기
+                        #============================================
                         elif str in lst:
                             color_dir = input_dir + str
-                            print(color_dir)
                             img = cv2.imread(color_dir)
-                            str = str[:-4] + ".JPG"
-                            print(ChangeWhite_dir + "/" + str)
+                            
+                            str = str[:-4] + extension
                             
                             cv2.imwrite(ChangeWhite_dir + "/" + str, img)
 
+                    #=================================
+                    #       Incremetal_Sfm 적용
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
 
                     for op in option["seq"]:
@@ -224,6 +243,7 @@ class Start(QThread):
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.bin")] )
             
                 elif count == 8:
+                    print ("7. Colorize Structure")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
 
                 elif count == 10:
@@ -231,12 +251,11 @@ class Start(QThread):
                         os.mkdir(Scene_dir)
 
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
-                    print(pSteps)
             
                 elif count == 11:
                     self.when_step_finished.emit()
 
-                    print("7. Densify Point Cloud")
+                    print("8. Densify Point Cloud")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
                     param = list([os.path.join(OPENMVS_BIN, "DensifyPointCloud"), "scene.mvs","-w", Scene_dir])
 
@@ -251,7 +270,7 @@ class Start(QThread):
                 elif count == 12:
                     self.when_step_finished.emit()
 
-                    print("8. Reconstruct the mesh")
+                    print("9. Reconstruct the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
                     param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir, "--export-type", "obj"])
                     
@@ -262,7 +281,7 @@ class Start(QThread):
                     pSteps = subprocess.Popen(param) 
                 
                 elif count == 13:
-                    print("9. Refine the mesh")
+                    print("10. Refine the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
                     param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir, "--export-type", "obj"])
                     
@@ -275,7 +294,7 @@ class Start(QThread):
                 elif count == 14:
                     self.when_step_finished.emit()
 
-                    print("10. Texture the mesh")
+                    print("11. Texture the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
                     param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir, "--export-type", "obj"])
                     
@@ -293,9 +312,11 @@ class Start(QThread):
                             count += 1
                             print(count)
                             break
+
                 elif ends == True:
                     self.when_step_finished.emit()
                     return
+
                 else:
                     while True:
                         if detection.poll():
@@ -368,16 +389,9 @@ class Thread(QThread):
                         self.change_label.emit("Structure Color (7/8)")
                     elif step == "- OpenMVG2OpenMVS_UNDISTORT -":
                         self.change_label.emit("OpenMVG2OpenMVS_UNDISTORT (8/8)")
-                    # elif step == "matches":
-                    #     self.change_label.emit("Compute Matches (8/8)")
                     
                     self.change_value.emit(int(percent))
                     self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
-
-                    # self.mutex.unlock()
-                    # if 100 == int(percent):
-                    #     percent = 0
-                        #break
 
     
 class QRDialog(QDialog):
