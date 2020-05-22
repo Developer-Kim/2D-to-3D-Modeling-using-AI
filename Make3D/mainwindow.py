@@ -1075,11 +1075,7 @@ class Ui_MainWindow(object):
 
         self.tabs.addWidget()
         
-<<<<<<< HEAD
     def startPipline(self, MainWindow):
-=======
-    def startPipline(self, MyWindow):
->>>>>>> c9bc72f9585dd994bf1d45616c26a02731f82c92
         global mrcnn_swt
 
         # RCNN checkbox 확인
