@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-## ==================================================================================
+## ===========================================================
 
 ## OpenMVG License
 
@@ -115,7 +115,7 @@ This program includes works distributed under the terms of another license(s) an
     Copyright (C) 1995-2005 Jean-loup Gailly
     Licensed under the [zlib license](http://opensource.org/licenses/Zlib).
 
-## ==================================================================================
+## ==============================================================
 
 
 ## OpenMVS License
