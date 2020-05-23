@@ -129,6 +129,43 @@ class Start(QThread):
                     print ("1. Intrinsics analysis")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
 
+                    file_list = os.listdir(input_dir)
+
+                    for str_ in file_list:
+                        img_ = os.path.join(input_dir, str_)
+
+                        if str_[-4] != '.':
+                            continue
+                            
+                        if "_mask" in str_:
+                            img = cv2.imread(img_, 0)
+                        else:
+                            img = cv2.imread(img_)
+
+                        if img.shape[0] > img.shape[1]:
+                            height, width = img.shape[0], img.shape[1]
+                            image_center = (width/2, height/2) # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
+
+                            rotation_mat = cv2.getRotationMatrix2D(image_center, 90, 1.)
+
+                            # rotation calculates the cos and sin, taking absolutes of those.
+                            abs_cos = abs(rotation_mat[0,0])
+                            abs_sin = abs(rotation_mat[0,1])
+
+                            # find the new width and height bounds
+                            bound_w = int(height * abs_sin + width * abs_cos)
+                            bound_h = int(height * abs_cos + width * abs_sin)
+
+                            # subtract old image center (bringing image back to origo) and adding the new image center coordinates
+                            rotation_mat[0, 2] += bound_w/2 - image_center[0]
+                            rotation_mat[1, 2] += bound_h/2 - image_center[1]
+
+                            # rotate image with the new bounds and translated rotation matrix
+                            rotated_mat = cv2.warpAffine(img, rotation_mat, (bound_w, bound_h))
+
+                            # 사진 저장
+                            img_r = input_dir + str_
+                            cv2.imwrite(img_r, rotated_mat)
                 #====================================================================
                 # Features 옵션 설정
             
@@ -398,11 +435,6 @@ class Thread(QThread):
 
             with open(output_dir + 'Progress/progress.txt' ,'r') as textfile:
                 while True:
-                    # self.mutex.lock()
-
-                    # if not self._status:
-                    #     self.cond.wait(self.mutex)
-
                     textfile.readline()
                     step = textfile.readline()[:-1]
                     textfile.readline()
