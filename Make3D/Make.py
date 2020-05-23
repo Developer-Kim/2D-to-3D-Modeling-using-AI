@@ -318,7 +318,7 @@ class Start(QThread):
             
                 elif count == 7:
                     print ("6. Structure from Known Poses (robust triangulation)")
-                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.bin")] )
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.putative.bin"), "-o", os.path.join(reconstruction_dir,"robust.bin")] )
             
                 elif count == 8:
                     print ("7. Colorize Structure")
@@ -328,7 +328,7 @@ class Start(QThread):
                     if not os.path.exists(Scene_dir):
                         os.mkdir(Scene_dir)
 
-                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
+                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
             
                 elif count == 11:
                     self.when_step_finished.emit()
@@ -341,8 +341,6 @@ class Start(QThread):
                         param.append(op)
                         param.append(option["densify"][op])
                     
-                    param.append("--estimate-normals")
-                    param.append("1")
                     pSteps = subprocess.Popen(param) 
 
                 elif count == 12:
