@@ -348,7 +348,7 @@ class Start(QThread):
 
                     print("9. Reconstruct the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
-                    param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir, "--export-type", "obj"])
+                    param = list([os.path.join(OPENMVS_BIN, "ReconstructMesh"), "scene_dense.mvs","-w", Scene_dir])
                     
                     for op in option["mesh"]:
                         param.append(op)
@@ -359,7 +359,7 @@ class Start(QThread):
                 elif count == 13:
                     print("10. Refine the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
-                    param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir, "--export-type", "obj"])
+                    param = list([os.path.join(OPENMVS_BIN, "RefineMesh"), "scene_dense_mesh.mvs","-w", Scene_dir])
                     
                     for op in option["refine"]:
                         param.append(op)
@@ -372,7 +372,7 @@ class Start(QThread):
 
                     print("11. Texture the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
-                    param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir, "--export-type", "obj"])
+                    param = list([os.path.join(OPENMVS_BIN, "TextureMesh"), "scene_dense_mesh_refine.mvs","-w", Scene_dir])
                     
                     for op in option["texture"]:
                         param.append(op)
