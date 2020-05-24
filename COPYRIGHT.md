@@ -6,8 +6,6 @@
   Copyright OpenMVG authors
   Licensed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
-This program includes works distributed under the terms of another license(s) and other copyright notice(s).
-
 *   __ceres-solver__<br />
     <[http://ceres-solver.org/](http://ceres-solver.org/)><br />
     Copyright 2015 Google Inc. All rights reserved.
@@ -93,8 +91,6 @@ This program includes works distributed under the terms of another license(s) an
     [http://cdcseacave.github.io/openMVS](http://cdcseacave.github.io/openMVS)
     Copyright (c) OpenMVS authors
     Licensed under the [AGPL](http://opensource.org/licenses/AGPL-3.0) license.
-
-This program includes works distributed under the terms of another license(s) and other copyright notice(s).
 
 *   __SeaCave__<br />
     Copyright (c) 2007 SEACAVE SRL.
