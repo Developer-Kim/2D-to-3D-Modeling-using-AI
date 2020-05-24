@@ -29,6 +29,7 @@ from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
 from mrcnn.visualize import display_images
+from Make3D.Binary import Image_Edit
 
 # Import COCO config
 sys.path.append(os.path.join(ROOT_DIR, "detect/car/"))  # To find local version
@@ -96,11 +97,9 @@ def Make_Mask():
     FILE_DIR = os.path.join(PROGRESS_DIR, "progress.txt")
     
     
-    with open(FILE_DIR, "w") as t:
-        t.writelines("\n")
-        t.writelines("- Make Mask_Image -\n")
-        t.writelines("\n")
-        t.write(str(count))
+    with open(FILE_DIR, "wt") as t:
+        t.write("\n- Make Mask_Image -\n\n")
+        t.write(str(avg))
 
         for name in file_names:
             if fail >= int(len(file_names) / 2):
@@ -163,35 +162,15 @@ def Make_Mask():
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 img_flip = cv2.flip(img_rgb, 1) # 1은 좌우 반전, 0은 상하 반전입니다.
 
-                height, width, _ = img_flip.shape
-                image_center = (width/2, height/2) # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
-
-                rotation_mat = cv2.getRotationMatrix2D(image_center, 90, 1.)
-
-                # rotation calculates the cos and sin, taking absolutes of those.
-                abs_cos = abs(rotation_mat[0,0])
-                abs_sin = abs(rotation_mat[0,1])
-
-                # find the new width and height bounds
-                bound_w = int(height * abs_sin + width * abs_cos)
-                bound_h = int(height * abs_cos + width * abs_sin)
-
-                # subtract old image center (bringing image back to origo) and adding the new image center coordinates
-                rotation_mat[0, 2] += bound_w/2 - image_center[0]
-                rotation_mat[1, 2] += bound_h/2 - image_center[1]
-
-                # rotate image with the new bounds and translated rotation matrix
-                rotated_mat = cv2.warpAffine(img_flip, rotation_mat, (bound_w, bound_h))
+                rotated_mat = Image_Edit.Rotation(img_flip)
 
                 # 사진 저장
                 mask_png = IMAGE_DIR+"/"+ name[:-4]+"_mask.png"
                 cv2.imwrite(mask_png, rotated_mat)
             
             t.seek(0)
-            t.writelines("\n")
-            t.writelines("- Make Mask_Image -\n")
-            t.writelines("\n")
-            t.write(str(int(avg)))
+            t.write("\n- Make Mask_Image -\n\n")
+            t.write(str(avg))
 
         for score, what in score_lst:
             print(str(what) + " - " + str(score))

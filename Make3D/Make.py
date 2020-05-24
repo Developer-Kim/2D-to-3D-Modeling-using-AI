@@ -62,12 +62,14 @@ import ssl
 import plyfile
 import cv2
 import time
+from shutil import copyfile
 # from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QWindow
 from PyQt5.QtCore import Qt, QThread, QWaitCondition, QMutex, pyqtSignal, QObject
 
+from Binary import Image_Edit
 from Mask_RCNN.detect import detection
 
 #option Dictionary 
@@ -116,53 +118,47 @@ class Start(QThread):
         def run(self):
             global output_dir, ChangeWhite_dir, matches_dir, reconstruction_dir, Scene_dir, OPENMVG_SFM_BIN, input_dir, camera_file_params, program_dir, option
             global mrcnn_swt
-            #============================================================================
-            count = 0
-            pSteps = None
-            ends = False
+            #====================================================
+            count = 0           # 단계별 상황
+            pSteps = None       # 프로세스
+            ends = False        # 종료하였는지,
+            
+            mrcnn_isOn = mrcnn_swt      #Mask_RCNN  ON/OFF
 
-            start_time = time.time()
-            start_time_mvs = 0
+            start_time = time.time()    # OpenMVG 시작 시간
+            start_time_mvs = 0          # OpenMVS 시작 시간
+            #====================================================
+            
+
+            # 이미지 사진 리스트 목록
+            file_list = os.listdir(input_dir)
+            
+            # Extension 확장자 찾기
+            for str_ in file_list:
+                if "." in str_ and "_mask" not in str_:
+                    extension = str_[-4:]
+                    break
+                    
             while True:
-                if mrcnn_swt == True:
+                #==============================
+                #       1. Mask_RCNN
+                #==============================
+                if mrcnn_isOn:
                     print ("0. Make mask Image")
                     detection.Make_Mask()
+                    
+                    # 마스크 존재하지 않는 사진들을 삭제
+                    Image_Edit.Not_Mask_Delete(input_dir)
 
-                    file_list = os.listdir(input_dir)
-                    extension = ""              # 확장자
-                    mask_list = set()           # 마스크 리스트
-                    no_mask_list = set()        # 마스크가 없는 사진 리스트
-
-                    #=====================================
-                    # 마스크 사진이 없는 사진들 리스트 뽑아오기
-                    #=====================================
-                    for str_ in file_list:
-                        if "." in str_:
-                            if "_mask" in str_:
-                                mask_list.add(str_)
-                            else:
-                                if str_[-4] == '.':
-                                    extension = str_[-4:]
-                                str_ = str_[:-4] + "_mask.png"
-                                no_mask_list.add(str_)                    
-
-                    lst = list(no_mask_list - mask_list)
-
-                    for i in range(len(lst)):
-                        lst[i] = lst[i][:-9] + extension
-                        os.remove(os.path.join(input_dir, lst[i]))
-                        
-                    with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
-                        end_time = time.time()
-                        t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
-                        t.writelines("OpenMVS 만 걸린 시간: " + str(end_time - start_time_mvs) + "초")    
-
+                #==============================
+                #       2. Image Listing
+                #==============================
                 elif count == 0:
                     print ("1. Intrinsics analysis")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
 
-                    file_list = os.listdir(input_dir)
 
+                    # 세로 길이가 길 경우, 반시계로 90도 돌림
                     for str_ in file_list:
                         img_ = os.path.join(input_dir, str_)
 
@@ -175,32 +171,15 @@ class Start(QThread):
                             img = cv2.imread(img_)
 
                         if img.shape[0] > img.shape[1]:
-                            height, width = img.shape[0], img.shape[1]
-                            image_center = (width/2, height/2) # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
-
-                            rotation_mat = cv2.getRotationMatrix2D(image_center, 90, 1.)
-
-                            # rotation calculates the cos and sin, taking absolutes of those.
-                            abs_cos = abs(rotation_mat[0,0])
-                            abs_sin = abs(rotation_mat[0,1])
-
-                            # find the new width and height bounds
-                            bound_w = int(height * abs_sin + width * abs_cos)
-                            bound_h = int(height * abs_cos + width * abs_sin)
-
-                            # subtract old image center (bringing image back to origo) and adding the new image center coordinates
-                            rotation_mat[0, 2] += bound_w/2 - image_center[0]
-                            rotation_mat[1, 2] += bound_h/2 - image_center[1]
-
-                            # rotate image with the new bounds and translated rotation matrix
-                            rotated_mat = cv2.warpAffine(img, rotation_mat, (bound_w, bound_h))
+                            rotated_mat = Image_Edit.Rotation(img)
 
                             # 사진 저장
                             img_r = input_dir + str_
                             cv2.imwrite(img_r, rotated_mat)
-                #====================================================================
-                # Features 옵션 설정
-            
+               
+                #==============================
+                #       3.   Feature
+                #==============================
                 elif count == 1:
 
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
@@ -212,21 +191,26 @@ class Start(QThread):
                     print ("2. Compute features")
                     pSteps = subprocess.Popen( param )
 
-                elif count == 2:
-                    #====================================================================
-                    # 특징점 캡쳐
 
+                #==============================
+                #    4. Export Feature Image
+                #==============================
+                elif count == 2:
+
+                    # Feature Image 저장할 폴더 생성
                     pFeature_dir = os.path.join(output_dir, "FeatureImage")
                     if not os.path.exists(pFeature_dir):
                         os.mkdir(pFeature_dir)
 
+                    # 인자 값 작성
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_exportKeypoints"), "-i", matches_dir+"/sfm_data.json", "-d", matches_dir, "-o", pFeature_dir])
 
                     pSteps = subprocess.Popen( param )
 
+                #==============================
+                #       5.    Matching
+                #==============================
                 elif count == 3:
-                    #====================================================================
-                    # Matches 옵션 설정
 
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-f", "1"])
 
@@ -237,10 +221,12 @@ class Start(QThread):
                     print ("3. Compute matches")
                     pSteps = subprocess.Popen( param )
 
+                #==============================
+                #       6. Export Matches
+                #==============================
                 elif count == 4:
-                    #====================================================================
-                    # 매칭점 캡쳐
 
+                    # Matching Image 저장할 폴더 생성
                     pMatches_dir = os.path.join(output_dir, "MatchImage")
                     if not os.path.exists(pMatches_dir):
                         os.mkdir(pMatches_dir)
@@ -249,56 +235,28 @@ class Start(QThread):
 
                     pSteps = subprocess.Popen( param )
 
+                #==============================
+                #      7. Incremental SfM
+                #==============================
                 elif count == 5:
                     # Create the reconstruction if not present
                     if not os.path.exists(reconstruction_dir):
                         os.mkdir(reconstruction_dir)
 
                     # Create the ChangeBlack if not present
-                    file_list = os.listdir(input_dir)
                     if not os.path.exists(ChangeWhite_dir):
                         os.mkdir(ChangeWhite_dir)
 
+                    # 마스크 존재할 때, 배경이 제거된 사진 생성
+                    if mrcnn_swt == True:
+                        Image_Edit.White_Change(input_dir, ChangeWhite_dir, extension)
                     
-                    for str_ in file_list:
-                        path = input_dir + str_
+                    # 존재하지 않으면, 그대로 대입.
+                    else:
+                        for str_ in file_list:
+                            copyfile(os.path.join(input_dir,str_),os.path.join(ChangeWhite_dir, str_)) 
 
-                        #============================================
-                        #           배경이 하얀색인 사진 뽑아오기
-                        #============================================
-                        if "_mask" in str_:
-                            # 컬러 사진 로드
-                            color_dir = input_dir + str_[:-9] + extension
-                            img = cv2.imread(color_dir)
-                            # 마스크 사진 로드
-                            mask = cv2.imread(path, 0)
-                            
-                            # 이미지, 마스크 Shape
-                            i_height, i_width = img.shape[0], img.shape[1]
-                            m_height, m_width = mask.shape
-                            
-                            # 마스크 사진과 컬러 사진 크기 동일할 시.
-                            if m_height == i_height and m_width == i_width: 
-
-                                # 마스크를 적용시킨 하얀색 배경 사진 뽑아오기
-                                img_white = ~mask
-                                img_white = cv2.cvtColor(img_white, cv2.COLOR_GRAY2BGR)
-                            
-                                # 비트마스크를 적용
-                                res = cv2.bitwise_and(img, img, mask = mask)
-                                
-                                # 가중치를 적용하여 배경이 제거된 하얀색 배경 추출.
-                                weighted_img = cv2.add(res, img_white)
-                                
-                                # 경로 지정
-                                mask_png = ChangeWhite_dir + "/" + str_[:-9] + extension
-            
-                                # 사진 Write
-                                cv2.imwrite(mask_png, weighted_img)
-
-
-                    #=================================
-                    #       Incremetal_Sfm 적용
+                    
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
 
                     for op in option["seq"]:
@@ -308,9 +266,9 @@ class Start(QThread):
                     print ("4. Do Sequential/Incremental reconstruction")
                     pSteps = subprocess.Popen( param )
 
-
-                #====================================================================
-                # 나머지
+                #=============================================
+                #     8. Colorize, Robust, OpenMVG2OpenMVS
+                #=============================================
                 elif count == 6:
                     print ("5. Colorize Structure")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
@@ -329,6 +287,9 @@ class Start(QThread):
 
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_openMVG2openMVS"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(Scene_dir,"scene.mvs")] )
             
+                #==============================
+                #    9. Densify Point Cloud
+                #==============================
                 elif count == 11:
                     self.when_step_finished.emit()
 
@@ -342,6 +303,9 @@ class Start(QThread):
                     
                     pSteps = subprocess.Popen(param) 
 
+                #==============================
+                #     10. Reconstruct Mesh
+                #==============================
                 elif count == 12:
                     self.when_step_finished.emit()
 
@@ -355,6 +319,9 @@ class Start(QThread):
 
                     pSteps = subprocess.Popen(param) 
                 
+                #==============================
+                #      11. Refine Mesh
+                #==============================
                 elif count == 13:
                     print("10. Refine the mesh")
                     OPENMVS_BIN = OPENMVG_SFM_BIN
@@ -366,6 +333,9 @@ class Start(QThread):
 
                     pSteps = subprocess.Popen(param)
 
+                #==============================
+                #      12. Texture
+                #==============================
                 elif count == 14:
                     self.when_step_finished.emit()
 
@@ -378,28 +348,46 @@ class Start(QThread):
                         param.append(option["texture"][op])
 
                     pSteps = subprocess.Popen(param)
+                    # 끝나기 위한 True
                     ends = True
 
-                if not mrcnn_swt:
+                #==================================
+                #      OpenMVG_OpenMVS 이벤트 루프
+                #==================================
+                if not mrcnn_isOn:
                     while True:   
                         if pSteps.poll() is not None:
                             if count == 10:
                                 with open(output_dir + 'Progress/OpenMVG.txt' ,'wt') as t:
                                     end_time = time.time()
-                                    t.writelines(str(end_time - start_time) + "초")
+                                    t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
                                     start_time_mvs = time.time()
                             count += 1
                             break
-
+                    
+                #==============================
+                #       종료 시, 루프문 탈출
+                #==============================
                 elif ends == True:
+                    with open(output_dir + 'Progress/OpenMVS.txt' ,'wt') as t:
+                        end_time = time.time()
+                        t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
+                        t.writelines("OpenMVS 만 걸린 시간: " + str(end_time - start_time_mvs) + "초")    
                     self.when_step_finished.emit()
                     return
 
+                #==============================
+                #      Mask_RCNN 종료시,
+                #==============================
                 else:
                     while True:
                         if detection.poll():
-                            mrcnn_swt = False
+                            with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
+                                end_time = time.time()
+                                t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
+                            mrcnn_isOn = False
                             break 
+
 
 class Thread(QThread):
     global output_dir, mrcnn_swt
