@@ -203,7 +203,7 @@ class Start(QThread):
                         param.append(option["matches"][op])
 
                     print ("3. Compute matches")
-                    pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir] )
+                    pSteps = subprocess.Popen( param )
 
                 elif count == 4:
                     #====================================================================
@@ -265,7 +265,7 @@ class Start(QThread):
                             mask = cv2.imread(path, 0)
                             
                             # 이미지, 마스크 Shape
-                            i_height, i_width, _ = img.shape
+                            i_height, i_width = img.shape[0], img.shape[1]
                             m_height, m_width = mask.shape
                             
                             # 마스크 사진과 컬러 사진 크기 동일할 시.
@@ -428,7 +428,7 @@ class Thread(QThread):
 
     def run(self):
         while True:
-            if not os.path.exists(output_dir + 'Progress'):
+            if not os.path.isfile(output_dir + 'Progress/progress.txt'):
                 continue
 
             with open(output_dir + 'Progress/progress.txt' ,'r') as textfile:
