@@ -61,6 +61,7 @@ import matplotlib.pyplot as plt
 import ssl
 import plyfile
 import cv2
+import time
 # from wmctrl import Window
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
@@ -120,10 +121,37 @@ class Start(QThread):
             pSteps = None
             ends = False
 
+            start_time = time.time()
+            start_time_mvs = 0
             while True:
                 if mrcnn_swt == True:
                     print ("0. Make mask Image")
                     detection.Make_Mask()
+
+                    file_list = os.listdir(input_dir)
+                    extension = ""              # 확장자
+                    mask_list = set()           # 마스크 리스트
+                    no_mask_list = set()        # 마스크가 없는 사진 리스트
+
+                    #=====================================
+                    # 마스크 사진이 없는 사진들 리스트 뽑아오기
+                    #=====================================
+                    for str in file_list:
+                        if "." in str:
+                            if "_mask" in str:
+                                mask_list.add(str)
+                            else:
+                                if str[-4] == '.':
+                                    extension = str[-4:]
+                                str = str[:-4] + "_mask.png"
+                                no_mask_list.add(str)                    
+
+                    lst = list(no_mask_list - mask_list)
+
+                    for i in range(len(lst)):
+                        lst[i] = lst[i][:-9] + extension
+                        os.remove(os.path.join(input_dir, lst[i]))
+                        
 
                 elif count == 0:
                     print ("1. Intrinsics analysis")
@@ -196,7 +224,7 @@ class Start(QThread):
                     #====================================================================
                     # Matches 옵션 설정
 
-                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir])
+                    param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-f", "1"])
 
                     for op in option["matches"]:
                         param.append(op)
@@ -227,29 +255,6 @@ class Start(QThread):
                     if not os.path.exists(ChangeWhite_dir):
                         os.mkdir(ChangeWhite_dir)
 
-
-                    extension = ""              # 확장자
-                    mask_list = set()           # 마스크 리스트
-                    no_mask_list = set()        # 마스크가 없는 사진 리스트
-
-                    #=====================================
-                    # 마스크 사진이 없는 사진들 리스트 뽑아오기
-                    #=====================================
-
-                    for str in file_list:
-                        if "_mask" in str:
-                            mask_list.add(str)
-                        else:
-                            if str[-4] == '.':
-                                extension = str[-4:]
-                            str = str[:-4] + "_mask.png"
-                            no_mask_list.add(str)                    
-
-                    lst = list(no_mask_list - mask_list)
-
-                    for i in range(len(lst)):
-                        lst[i] = lst[i][:-9] + extension
-                    
                     
                     for str in file_list:
                         path = input_dir + str
@@ -287,16 +292,6 @@ class Start(QThread):
                                 # 사진 Write
                                 cv2.imwrite(mask_png, weighted_img)
 
-                        #============================================
-                        #       마스크 없는 사진은 그대로 넣어주기
-                        #============================================
-                        elif str in lst:
-                            color_dir = input_dir + str
-                            img = cv2.imread(color_dir)
-                            
-                            str = str[:-4] + extension
-                            
-                            cv2.imwrite(ChangeWhite_dir + "/" + str, img)
 
                     #=================================
                     #       Incremetal_Sfm 적용
@@ -384,20 +379,29 @@ class Start(QThread):
                 if not mrcnn_swt:
                     while True:   
                         if pSteps.poll() is not None:
-                            print("!!!!Finish===============================")
+                            if count == 10:
+                                with open(output_dir + 'Progress/OpenMVG.txt' ,'wt') as t:
+                                    end_time = time.time()
+                                    t.writeline(str(end_time - start_time) + "초")
+                                    start_time_mvs = time.time()
                             count += 1
-                            print(count)
                             break
 
                 elif ends == True:
+                    with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
+                        end_time = time.time()
+                        t.writeline("총 걸린 시간: " + str(end_time - start_time) + "초\n")
+                        t.writeline("OpenMVS 만 걸린 시간: " + str(end_time - start_time_mvs) + "초")    
                     self.when_step_finished.emit()
                     return
 
                 else:
                     while True:
                         if detection.poll():
+                            with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
+                                end_time = time.time()
+                                t.writeline(str(end_time - start_time) + "초")    
                             mrcnn_swt = False
-                            print("@@@@Finish===============================")
                             break 
 
 class Thread(QThread):
@@ -443,23 +447,39 @@ class Thread(QThread):
                     if not step:
                         continue
                     elif step == "- Make Mask_Image -":
-                        self.change_label.emit("Mask Iamge (0/9)")
+                        self.change_label.emit("[0/11] Mask Iamge")
                     elif step == "- Feature -":
-                        self.change_label.emit("Feature (1/9)")
+                        self.change_label.emit("[1/11] Feature")
                     elif step == "- Export Feature -":
-                        self.change_label.emit("Export Feature (2/9)")
+                        self.change_label.emit("[2/11] Export Feature")
                     elif step == "- Matching -":
-                        self.change_label.emit("Matching (3/9)")
+                        self.change_label.emit("[3/1] Matching - 1/2 ")
                     elif step == "- Geometric filtering -":
-                        self.change_label.emit("Geometric filtering (4/8)")
+                        self.change_label.emit("[3/11] Matching - 2/2")
                     elif step == "- Export Matches -":
-                        self.change_label.emit("Export Matches (5/8)")
+                        self.change_label.emit("[4/11] Export Matches")
                     elif step == "- Resection -":
-                        self.change_label.emit("Resection (6/8)")
+                        self.change_label.emit("[5/11] Incremental Sfm")
                     elif step == "- Structure Color -":
-                        self.change_label.emit("Structure Color (7/8)")
+                        self.change_label.emit("[6/11] Structure Color")
                     elif step == "- OpenMVG2OpenMVS_UNDISTORT -":
-                        self.change_label.emit("OpenMVG2OpenMVS_UNDISTORT (8/8)")
+                        self.change_label.emit("[7/11] Undistort Image")
+                    elif step == "- Estimated depth-maps -":
+                        self.change_label.emit("[8/11] Densify Point Cloud - 1/2")
+                    elif step == "- Filtered depth-maps -":
+                        self.change_label.emit("[8/11] Densify Point Cloud - 2/2")
+                    elif step == "- Points inserted -":
+                        self.change_label.emit("[9/11] Reconstruct Mesh - 1/2")
+                    elif step == "- Points weighted -":
+                        self.change_label.emit("[9/11] Reconstruct Mesh - 2/2")
+                    elif step == "- Processed iterations1 -":
+                        self.change_label.emit("[10/11] Refine Mesh - 1/3")
+                    elif step == "- Processed iterations2 -":
+                        self.change_label.emit("[10/11] Refine Mesh - 2/3")
+                    elif step == "- Processed iterations3 -":
+                        self.change_label.emit("[10/11] Refine Mesh - 3/3")
+                    elif step == "- Texture -":
+                        self.change_label.emit("[11/11] Texture")
                     
                     self.change_value.emit(int(percent))
                     self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용

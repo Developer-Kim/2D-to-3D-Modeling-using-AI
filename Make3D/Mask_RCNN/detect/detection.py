@@ -124,7 +124,7 @@ def Make_Mask():
 
                 for i in range(len(r['scores'])):
 
-                    if r['scores'][i] > 0.98:
+                    if r['scores'][i] > 0.96:
                         score_lst.append([r['scores'][i], "Success"])
                         lists = dict()
 
@@ -142,6 +142,16 @@ def Make_Mask():
 
                         # 해당 이미지의 좌표를 통해 mask 제작
                         img = cv2.polylines(img, [pos_], False, (255, 255, 255), 1)
+                        ret, thr = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+                        contours, _ = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                        max_ = [0, -1]
+                        for i in range(len(contours)):
+                            area = cv2.contourArea(contours[i])
+                            if max_[1] < area:
+                                max_ = [i, area]
+                            
+                        cv2.drawContours(img, [contours[i]], 0, (0,0,0), -1)
+
                     else:
                         score_lst.append([r['scores'], "Fail"])
                         fail += 1
