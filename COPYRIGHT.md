@@ -1,10 +1,8 @@
-## OpenMVG License
+# Coffee is Venti Project License
 
 * __OpenMVG - open Multiple View Geometry__<br />
   Copyright OpenMVG authors
   Licensed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
-
-## Included third parties licence details
 
 This program includes works distributed under the terms of another license(s) and other copyright notice(s).
 
@@ -87,14 +85,10 @@ This program includes works distributed under the terms of another license(s) an
     Copyright (C) 1995-2005 Jean-loup Gailly
     Licensed under the [zlib license](http://opensource.org/licenses/Zlib).
 
-## OpenMVS License
-
 *   __OpenMVS__<br />
     [http://cdcseacave.github.io/openMVS](http://cdcseacave.github.io/openMVS)
     Copyright (c) OpenMVS authors
     Licensed under the [AGPL](http://opensource.org/licenses/AGPL-3.0) license.
-
-## Included third parties license details
 
 This program includes works distributed under the terms of another license(s) and other copyright notice(s).
 
