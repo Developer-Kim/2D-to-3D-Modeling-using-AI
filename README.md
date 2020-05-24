@@ -1,5 +1,6 @@
 # Coffee is Venti Project
 **물체의 스테레오 이미지로 SfM 기술을 활용하여 딥러닝을 통해 사진에서 필요한 물체를 인식하고 물체의 3D 모델링을 하는 프로젝트**
+**Project : recognizes objects in a photo and performs 3D modeling of objects through deep learning using SfM technology as a stereo image of objects**
 
 ## Introduction
 ![image](https://user-images.githubusercontent.com/39071723/82747322-bd217180-9dd2-11ea-80ce-0b73be7bf63f.png)
