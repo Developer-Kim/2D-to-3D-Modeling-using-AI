@@ -136,15 +136,15 @@ class Start(QThread):
                     #=====================================
                     # 마스크 사진이 없는 사진들 리스트 뽑아오기
                     #=====================================
-                    for str in file_list:
-                        if "." in str:
-                            if "_mask" in str:
-                                mask_list.add(str)
+                    for str_ in file_list:
+                        if "." in str_:
+                            if "_mask" in str_:
+                                mask_list.add(str_)
                             else:
-                                if str[-4] == '.':
-                                    extension = str[-4:]
-                                str = str[:-4] + "_mask.png"
-                                no_mask_list.add(str)                    
+                                if str_[-4] == '.':
+                                    extension = str_[-4:]
+                                str_ = str_[:-4] + "_mask.png"
+                                no_mask_list.add(str_)                    
 
                     lst = list(no_mask_list - mask_list)
 
@@ -152,6 +152,10 @@ class Start(QThread):
                         lst[i] = lst[i][:-9] + extension
                         os.remove(os.path.join(input_dir, lst[i]))
                         
+                    with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
+                        end_time = time.time()
+                        t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
+                        t.writelines("OpenMVS 만 걸린 시간: " + str(end_time - start_time_mvs) + "초")    
 
                 elif count == 0:
                     print ("1. Intrinsics analysis")
@@ -256,15 +260,15 @@ class Start(QThread):
                         os.mkdir(ChangeWhite_dir)
 
                     
-                    for str in file_list:
-                        path = input_dir + str
+                    for str_ in file_list:
+                        path = input_dir + str_
 
                         #============================================
                         #           배경이 하얀색인 사진 뽑아오기
                         #============================================
-                        if "_mask" in str:
+                        if "_mask" in str_:
                             # 컬러 사진 로드
-                            color_dir = input_dir + str[:-9] + extension
+                            color_dir = input_dir + str_[:-9] + extension
                             img = cv2.imread(color_dir)
                             # 마스크 사진 로드
                             mask = cv2.imread(path, 0)
@@ -287,7 +291,7 @@ class Start(QThread):
                                 weighted_img = cv2.add(res, img_white)
                                 
                                 # 경로 지정
-                                mask_png = ChangeWhite_dir + "/" + str[:-9] + extension
+                                mask_png = ChangeWhite_dir + "/" + str_[:-9] + extension
             
                                 # 사진 Write
                                 cv2.imwrite(mask_png, weighted_img)
@@ -382,25 +386,18 @@ class Start(QThread):
                             if count == 10:
                                 with open(output_dir + 'Progress/OpenMVG.txt' ,'wt') as t:
                                     end_time = time.time()
-                                    t.writeline(str(end_time - start_time) + "초")
+                                    t.writelines(str(end_time - start_time) + "초")
                                     start_time_mvs = time.time()
                             count += 1
                             break
 
                 elif ends == True:
-                    with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
-                        end_time = time.time()
-                        t.writeline("총 걸린 시간: " + str(end_time - start_time) + "초\n")
-                        t.writeline("OpenMVS 만 걸린 시간: " + str(end_time - start_time_mvs) + "초")    
                     self.when_step_finished.emit()
                     return
 
                 else:
                     while True:
                         if detection.poll():
-                            with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
-                                end_time = time.time()
-                                t.writeline(str(end_time - start_time) + "초")    
                             mrcnn_swt = False
                             break 
 
