@@ -263,7 +263,7 @@ class Start(QThread):
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
                     
                     tmp_ = option["seq"]["-f"]
-                    tmp_ = " ".join(tmp_.split('\n'))
+                    tmp_ = "".join(tmp_.split('\n'))
                     option["seq"]["-f"] = tmp_
                     
                     for op in option["seq"]:
