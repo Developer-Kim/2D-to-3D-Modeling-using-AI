@@ -169,12 +169,10 @@ class Start(QThread):
                         else:
                             img = cv2.imread(img_)
 
-                        if img.shape[0] > img.shape[1]:
-                            rotated_mat = Image_Edit.Rotation(img)
-
-                            # 사진 저장
-                            img_r = input_dir + str_
-                            cv2.imwrite(img_r, rotated_mat)
+                        rotated_mat = Image_Edit.Rotation(img)
+                        # 사진 저장
+                        img_r = input_dir + str_
+                        cv2.imwrite(img_r, rotated_mat)
                
                 #==============================
                 #       3.   Feature
@@ -448,7 +446,7 @@ class Thread(QThread):
                     elif step == "- Export Feature -":
                         self.change_label.emit("[2/11] Export Feature")
                     elif step == "- Matching -":
-                        self.change_label.emit("[3/1] Matching - 1/2 ")
+                        self.change_label.emit("[3/11] Matching - 1/2 ")
                     elif step == "- Geometric filtering -":
                         self.change_label.emit("[3/11] Matching - 2/2")
                     elif step == "- Export Matches -":
