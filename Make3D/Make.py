@@ -102,9 +102,7 @@ reconstruction_dir = ""
 Scene_dir = ""
 Mvs_dir = ""
 
-
 mrcnn_swt = False
-
 
 class Start(QThread):
         when_step_finished = pyqtSignal()
@@ -156,6 +154,7 @@ class Start(QThread):
                     print ("1. Intrinsics analysis")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
 
+                    file_list = os.listdir(input_dir)
                     # 세로 길이가 길 경우, 반시계로 90도 돌림
                     for str_ in file_list:
                         img_ = os.path.join(input_dir, str_)
