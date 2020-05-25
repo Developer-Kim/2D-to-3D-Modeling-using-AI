@@ -10,7 +10,7 @@ See the complete [Documentation](https://github.com/ES-Justin-Kim/2D-to-3D-Model
 
 <img src="https://user-images.githubusercontent.com/39071723/82821801-ac125680-9edf-11ea-878f-bdc4590d83c8.png" width="200" height="200"></img>  
 
-See the [site](www.coffeeisventi.site) or scan the QR code
+See the [site](https://www.coffeeisventi.site) or scan the QR code
 
 ## Build
 See the [Building](https://github.com/ES-Justin-Kim/2D-to-3D-Modeling-using-AI/wiki/Building) wiki page.
