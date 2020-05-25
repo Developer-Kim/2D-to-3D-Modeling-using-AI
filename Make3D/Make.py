@@ -129,7 +129,6 @@ class Start(QThread):
             start_time_mvs = 0          # OpenMVS 시작 시간
             #====================================================
             
-
             # 이미지 사진 리스트 목록
             file_list = os.listdir(input_dir)
             
@@ -191,7 +190,6 @@ class Start(QThread):
                     print ("2. Compute features")
                     pSteps = subprocess.Popen( param )
 
-
                 #==============================
                 #    4. Export Feature Image
                 #==============================
@@ -215,7 +213,7 @@ class Start(QThread):
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-f", "1"])
 
                     tmp_ = option["matches"]["-n"]
-                    tmp_ = " ".join(tmp_.split('\n'))
+                    tmp_ = "".join(tmp_.split('\n'))
                     option["matches"]["-n"] = tmp_
 
                     for op in option["matches"]:
