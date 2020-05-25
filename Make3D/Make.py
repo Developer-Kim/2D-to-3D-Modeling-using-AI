@@ -214,10 +214,15 @@ class Start(QThread):
 
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"), "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-f", "1"])
 
+                    tmp_ = option["matches"]["-n"]
+                    tmp_ = " ".join(tmp_.split('\n'))
+                    option["matches"]["-n"] = tmp_
+
                     for op in option["matches"]:
                         param.append(op)
                         param.append(option["matches"][op])
 
+                    print(param)
                     print ("3. Compute matches")
                     pSteps = subprocess.Popen( param )
 
@@ -258,10 +263,17 @@ class Start(QThread):
 
                     
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
-
+                    
+                    tmp_ = option["seq"]["-f"]
+                    tmp_ = " ".join(tmp_.split('\n'))
+                    option["seq"]["-f"] = tmp_
+                    
                     for op in option["seq"]:
                         param.append(op)
                         param.append(option["seq"][op])
+
+                    
+                    print(param)
 
                     print ("4. Do Sequential/Incremental reconstruction")
                     pSteps = subprocess.Popen( param )
@@ -1225,6 +1237,7 @@ class Ui_MainWindow(object):
                 option[pipNum][signal] = self.GeometricModelGroup.checkedButton().text()
             elif signal == "-n":
                 option[pipNum][signal] = self.NearestMatchingGroup.checkedButton().text()
+            
             print(option["matches"])
         elif pipNum == "seq":
             if signal == "-f":

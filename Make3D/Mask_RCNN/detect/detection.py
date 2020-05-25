@@ -99,7 +99,7 @@ def Make_Mask():
     
     with open(FILE_DIR, "wt") as t:
         t.write("\n- Make Mask_Image -\n\n")
-        t.write(str(avg))
+        t.write(str(int(avg)))
 
         for name in file_names:
             if fail >= int(len(file_names) / 2):
@@ -107,6 +107,7 @@ def Make_Mask():
                 finish = True
                 return
 
+            contain_ = False
             image = skimage.io.imread(os.path.join(IMAGE_DIR, name))
               
             # Run detection
@@ -145,6 +146,8 @@ def Make_Mask():
                         ret, thr = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
                         contours, _ = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+                        contain_ = True
+
                         if len(contours) > 1:
                             max_ = [-1, -1]
                             for i in range(len(contours)):
@@ -154,23 +157,24 @@ def Make_Mask():
                             img = np.zeros((image.shape[1],image.shape[0]),np.uint8)
                             cv2.drawContours(img, [contours[max_[0]]], 0, 255, -1)
 
-                    else:
-                        score_lst.append([r['scores'], "Fail"])
-                        fail += 1
+                if not contain_:
+                    score_lst.append([r['scores'], "Fail"])
+                    fail += 1
+                    
+                else:
+                    # 마스크를 좌우반전 및 로테이션 작업을 통해 기존의 사진과 일치시킴
+                    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    img_flip = cv2.flip(img_rgb, 1) # 1은 좌우 반전, 0은 상하 반전입니다.
 
-                # 마스크를 좌우반전 및 로테이션 작업을 통해 기존의 사진과 일치시킴
-                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                img_flip = cv2.flip(img_rgb, 1) # 1은 좌우 반전, 0은 상하 반전입니다.
+                    rotated_mat = Image_Edit.Rotation(img_flip)
 
-                rotated_mat = Image_Edit.Rotation(img_flip)
-
-                # 사진 저장
-                mask_png = IMAGE_DIR+"/"+ name[:-4]+"_mask.png"
-                cv2.imwrite(mask_png, rotated_mat)
+                    # 사진 저장
+                    mask_png = IMAGE_DIR+"/"+ name[:-4]+"_mask.png"
+                    cv2.imwrite(mask_png, rotated_mat)
             
             t.seek(0)
             t.write("\n- Make Mask_Image -\n\n")
-            t.write(str(avg))
+            t.write(str(int(avg)))
 
         for score, what in score_lst:
             print(str(what) + " - " + str(score))
