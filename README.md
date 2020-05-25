@@ -14,7 +14,9 @@ See the complete [Documentation](https://github.com/ES-Justin-Kim/2D-to-3D-Model
 Scan the QR code and check the result
 
 ## Site
-[<img src="https://user-images.githubusercontent.com/39071723/82827828-be45c200-9eea-11ea-8a28-0684ded73b14.gif" width="700" height="370"></img>](www.coffeeisventi.site)
+<img src="https://user-images.githubusercontent.com/39071723/82827828-be45c200-9eea-11ea-8a28-0684ded73b14.gif" width="700" height="370"></img>
+
+See -> www.coffeeisventi.site
 
 ## Build
 See the [Building](https://github.com/ES-Justin-Kim/2D-to-3D-Modeling-using-AI/wiki/Building) wiki page.
