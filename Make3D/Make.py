@@ -134,7 +134,7 @@ class Start(QThread):
             
             # Extension 확장자 찾기
             for str_ in file_list:
-                if "." in str_ and "_mask" not in str_:
+                if "_mask" not in str_:
                     extension = str_[-4:]
                     break
                     
@@ -155,7 +155,6 @@ class Start(QThread):
                 elif count == 0:
                     print ("1. Intrinsics analysis")
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params] )
-
 
                     # 세로 길이가 길 경우, 반시계로 90도 돌림
                     for str_ in file_list:
@@ -261,7 +260,6 @@ class Start(QThread):
                         param.append(op)
                         param.append(option["seq"][op])
 
-                    
                     print(param)
 
                     print ("4. Do Sequential/Incremental reconstruction")

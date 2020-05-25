@@ -24,7 +24,7 @@ def Not_Mask_Delete(input_dir):
 
     # 없는 사진들을 삭제
     for i in range(len(lst)):
-        lst[i] = lst[i][:-9] + extension
+        lst[i] = ''.join(lst[i][:-9]) + extension
         os.remove(os.path.join(input_dir, lst[i]))
 
         
@@ -51,7 +51,7 @@ def White_Change(input_dir, ChangeWhite_dir, extension):
     lst = list(no_mask_list - mask_list)
 
     for i in range(len(lst)):
-        lst[i] = lst[:-4] + extension
+        lst[i] = ''.join(lst[i][:-4]) + extension
     lst = set(lst)
     
     for str_ in file_list:
