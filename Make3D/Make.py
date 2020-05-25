@@ -248,7 +248,7 @@ class Start(QThread):
                         os.mkdir(ChangeWhite_dir)
 
                     # 마스크 존재할 때, 배경이 제거된 사진 생성
-                    Image_Edit.White_Change(input_dir, ChangeWhite_dir, extension)
+                    Image_Edit.White_Change(input_dir, ChangeWhite_dir)
                     
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
                     
@@ -875,7 +875,6 @@ class Ui_MainWindow(object):
         self.tab1 = QtWidgets.QWidget()
         
         self.tabs.addTab(self.tab1, "Point Cloud")
-       
 
         #capture button
         self.btn_capture = QtWidgets.QPushButton(self.v2_widget)
@@ -1471,11 +1470,6 @@ class MyWindow(QtWidgets.QMainWindow):
         self.show()
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
-    #MainWindow = QtWidgets.QMainWindow()
     MainWindow = MyWindow()
-    #ui = Ui_MainWindow()
-    #ui.setupUi(MainWindow)
-    #MainWindow.show()
     sys.exit(app.exec_())
