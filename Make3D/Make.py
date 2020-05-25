@@ -249,14 +249,7 @@ class Start(QThread):
                         os.mkdir(ChangeWhite_dir)
 
                     # 마스크 존재할 때, 배경이 제거된 사진 생성
-                    if mrcnn_swt == True:
-                        Image_Edit.White_Change(input_dir, ChangeWhite_dir, extension)
-                    
-                    # 존재하지 않으면, 그대로 대입.
-                    else:
-                        for str_ in file_list:
-                            copyfile(os.path.join(input_dir,str_),os.path.join(ChangeWhite_dir, str_)) 
-
+                    Image_Edit.White_Change(input_dir, ChangeWhite_dir, extension)
                     
                     param = list([os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir])
                     

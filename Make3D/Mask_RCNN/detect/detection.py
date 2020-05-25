@@ -96,7 +96,6 @@ def Make_Mask():
         
     FILE_DIR = os.path.join(PROGRESS_DIR, "progress.txt")
     
-    
     with open(FILE_DIR, "wt") as t:
         t.write("\n- Make Mask_Image -\n\n")
         t.write(str(int(avg)))
@@ -160,7 +159,7 @@ def Make_Mask():
                 if not contain_:
                     score_lst.append([r['scores'], "Fail"])
                     fail += 1
-                    
+
                 else:
                     # 마스크를 좌우반전 및 로테이션 작업을 통해 기존의 사진과 일치시킴
                     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

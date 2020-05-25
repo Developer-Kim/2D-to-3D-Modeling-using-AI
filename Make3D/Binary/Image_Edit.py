@@ -1,5 +1,6 @@
 import cv2
 import os
+from shutil import copyfile
 
 def Not_Mask_Delete(input_dir):
     mask_list = set()           # 마스크 리스트
@@ -31,6 +32,28 @@ def Not_Mask_Delete(input_dir):
 def White_Change(input_dir, ChangeWhite_dir, extension):
     file_list = os.listdir(input_dir)
 
+    mask_list = set()           # 마스크 리스트
+    no_mask_list = set()        # 마스크가 없는 사진 리스트
+
+    #=====================================
+    # 마스크 사진이 없는 사진들 리스트 뽑아오기
+    #=====================================
+    for str_ in file_list:
+        if "." in str_:
+            if "_mask" in str_:
+                mask_list.add(str_)
+            else:
+                if str_[-4] == '.':
+                    extension = str_[-4:]
+                str_ = str_[:-4] + "_mask.png"
+                no_mask_list.add(str_)                    
+
+    lst = list(no_mask_list - mask_list)
+
+    for i in range(len(lst)):
+        lst[i] = lst[:-4] + extension
+    lst = set(lst)
+    
     for str_ in file_list:
         path = input_dir + str_
 
@@ -67,6 +90,11 @@ def White_Change(input_dir, ChangeWhite_dir, extension):
                 # 사진 Write
                 cv2.imwrite(mask_png, weighted_img)
 
+        else:
+            if str_ in lst:
+                save_dir = ChangeWhite_dir + "/" + str_
+                copyfile(os.path.join(input_dir, str_), os.path.join(ChangeWhite_dir, str_)) 
+                
 
 
 def Rotation(img):
