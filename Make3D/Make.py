@@ -468,7 +468,7 @@ class Thread(QThread):
                     self.change_value.emit(int(percent))
                     self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
 
-    
+
 class QRDialog(QDialog):
     def __init__(self):
         super().__init__()

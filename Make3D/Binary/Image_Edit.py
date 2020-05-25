@@ -27,9 +27,8 @@ def Not_Mask_Delete(input_dir):
         lst[i] = ''.join(lst[i][:-9]) + extension
         os.remove(os.path.join(input_dir, lst[i]))
 
-        
 
-def White_Change(input_dir, ChangeWhite_dir, extension):
+def White_Change(input_dir, ChangeWhite_dir):
     file_list = os.listdir(input_dir)
 
     mask_list = set()           # 마스크 리스트
@@ -46,23 +45,23 @@ def White_Change(input_dir, ChangeWhite_dir, extension):
                 if str_[-4] == '.':
                     extension = str_[-4:]
                 str_ = str_[:-4] + "_mask.png"
-                no_mask_list.add(str_)                    
+                no_mask_list.add(str_)
 
     lst = list(no_mask_list - mask_list)
 
     for i in range(len(lst)):
-        lst[i] = ''.join(lst[i][:-4]) + extension
+        lst[i] = ''.join(lst[i][:-9]) + extension
     lst = set(lst)
     
     for str_ in file_list:
-        path = input_dir + str_
+        path = os.path.join(input_dir, str_)
 
         #============================================
         #           배경이 하얀색인 사진 뽑아오기
         #============================================
         if "_mask" in str_:
             # 컬러 사진 로드
-            color_dir = input_dir + str_[:-9] + extension
+            color_dir = os.path.join(input_dir,str_[:-9] + extension)
             img = cv2.imread(color_dir)
             # 마스크 사진 로드
             mask = cv2.imread(path, 0)
@@ -85,16 +84,14 @@ def White_Change(input_dir, ChangeWhite_dir, extension):
                 weighted_img = cv2.add(res, img_white)
                 
                 # 경로 지정
-                mask_png = ChangeWhite_dir + "/" + str_[:-9] + extension
-
+                mask_png = os.path.join(ChangeWhite_dir, str_[:-9] + extension)
+                print(mask_png)
                 # 사진 Write
                 cv2.imwrite(mask_png, weighted_img)
 
         else:
             if str_ in lst:
-                save_dir = ChangeWhite_dir + "/" + str_
                 copyfile(os.path.join(input_dir, str_), os.path.join(ChangeWhite_dir, str_)) 
-                
 
 
 def Rotation(img):
