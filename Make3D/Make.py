@@ -259,7 +259,6 @@ class Start(QThread):
                         param.append(op)
                         param.append(option["seq"][op])
 
-                    print(param)
 
                     print ("4. Do Sequential/Incremental reconstruction")
                     pSteps = subprocess.Popen( param )
@@ -280,6 +279,7 @@ class Start(QThread):
                     pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/robust.bin", "-o", os.path.join(reconstruction_dir,"robust_colorized.ply")] )
 
                 elif count == 10:
+                    print ("7-2. OpenMVG2OpenMVS")
                     if not os.path.exists(Scene_dir):
                         os.mkdir(Scene_dir)
 
@@ -1118,75 +1118,70 @@ class Ui_MainWindow(object):
             self.radioBtn_RL_4.setChecked(True)
             self.radioBtn_RL_7.setChecked(True)
 
+    
     def getPlyContainer(self, MyWindow):
         #ply viewer 생성  & ply 파일 read
         global stepCount, WinID
 
         stepCount += 1
-        
-        if stepCount == 1:
-            data = plyfile.PlyData.read('./output/Reconstruct/robust_colorized.ply')['vertex']
-            xyz = np.c_[data['x'], data['y'], data['z']]
-            rgb = np.c_[data['red'], data['green'], data['blue']]
-            self.v = pptk.viewer(xyz)
-            self.v.set(point_size=0.0005)
-            self.v.attributes(rgb / 255.)
-        elif stepCount == 2:
-            data = plyfile.PlyData.read('./output/Scene/scene_dense.ply')['vertex']
-            xyz = np.c_[data['x'], data['y'], data['z']]
-            rgb = np.c_[data['red'], data['green'], data['blue']]
-            self.v = pptk.viewer(xyz)
-            self.v.set(point_size=0.0005)
-            self.v.attributes(rgb / 255.)
-        elif stepCount == 3:
-            data = plyfile.PlyData.read('./output/Scene/scene_dense_mesh_refine.ply')['vertex']
-            xyz = np.c_[data['x'], data['y'], data['z']]
-            self.v = pptk.viewer(xyz)
-            #self.v.set(point_size=0.0005)
-        elif stepCount == 4:
-            data = plyfile.PlyData.read('./output/Scene/scene_dense_mesh_refine_texture.ply')['vertex']
-            xyz = np.c_[data['x'], data['y'], data['z']]
-            self.v = pptk.viewer(xyz)
-            #self.v.set(point_size=0.0005)
 
         #캡쳐 버튼 활성화
         self.btn_capture.setEnabled(True)
 
-        #터미널에서 viewer로 열린 window 잡아서 tab에 contain
-        viewerWinID_str = ""
-        viewerWinID_str = subprocess.getoutput("wmctrl -l | grep -i viewer | awk '{print $1}'") #get window id from terminal
-        print("==================================")
-        print(viewerWinID_str)
-        print("==================================")
+        find_str = list(["robust", "dense", "refine", "texture"])
+
+        def returnDir(step_):
+            if step_ == 1:
+                return os.path.join(reconstruction_dir, "robust_colorized.ply")
+            elif step_ == 2:
+                return os.path.join(Scene_dir, "scene_dense.ply")
+            elif step_ == 3:
+                return os.path.join(Scene_dir, "scene_dense_mesh_refine.ply")
+            elif step_ == 4:
+                return os.path.join(Scene_dir, "scene_dense_mesh_refine_texture.ply")
+
+        pSteps = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "Viewer"), returnDir(stepCount)] )
+        grep = "wmctrl -l | grep -i " + find_str[stepCount-1] + " | awk '{print $1}'"
+            
+        while True:
+            viewerWinID_str = subprocess.getoutput(grep)
+            if viewerWinID_str != "":
+                break
 
         window = QWindow.fromWinId(int(viewerWinID_str, 16))
-        window.setFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        window.setFlags(Qt.FramelessWindowHint)
         MyWindow.windowcontainer = MyWindow.createWindowContainer(window)
+
         if stepCount == 1:
             self.tab1.layout = QtWidgets.QVBoxLayout()
             self.tab1.layout.addWidget(MyWindow.windowcontainer)
             self.tab1.setLayout(self.tab1.layout)
-            self.tabs.addWidget()  #일부러 오류 발생하게 둠... 이거 아님 tab에 ply창 contain 안됨 (수정해야함)
+            time.sleep(0.1)
+
         elif stepCount == 2:
             self.tab2 = QtWidgets.QWidget()
             self.tab2.layout = QtWidgets.QVBoxLayout()
             self.tab2.layout.addWidget(MyWindow.windowcontainer)
             self.tab2.setLayout(self.tab2.layout)
+            time.sleep(0.1)
             self.tabs.addTab(self.tab2, "Densify Point Cloud")
+
         elif stepCount == 3:
             self.tab3 = QtWidgets.QWidget()
             self.tab3.layout = QtWidgets.QVBoxLayout()
             self.tab3.layout.addWidget(MyWindow.windowcontainer)
             self.tab3.setLayout(self.tab3.layout)
+            time.sleep(0.1)
             self.tabs.addTab(self.tab3, "Mesh")
+
         elif stepCount == 4:
             self.tab4 = QtWidgets.QWidget()
             self.tab4.layout = QtWidgets.QVBoxLayout()
             self.tab4.layout.addWidget(MyWindow.windowcontainer)
             self.tab4.setLayout(self.tab4.layout)
+            time.sleep(0.1)
             self.tabs.addTab(self.tab4, "Texture")
 
-        self.tabs.addWidget()
         
     def startPipline(self, MainWindow):
         global mrcnn_swt
