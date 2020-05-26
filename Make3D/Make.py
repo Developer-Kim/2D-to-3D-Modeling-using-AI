@@ -349,10 +349,22 @@ class Start(QThread):
                     # 끝나기 위한 True
 
 
+                #==============================
+                #      Mask_RCNN 종료시,
+                #==============================
+                if mrcnn_isOn:
+                    while True:
+                        if detection.poll():
+                            with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
+                                end_time = time.time()
+                                t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
+                            mrcnn_isOn = False
+                            break 
+
                 #==================================
                 #      OpenMVG_OpenMVS 이벤트 루프
                 #==================================
-                if not mrcnn_isOn and not ends:
+                elif not ends:
                     while True:
                         if pSteps.poll() is not None:
                             if count == 10:
@@ -377,17 +389,7 @@ class Start(QThread):
                     self.when_step_finished.emit()
                     return
 
-                #==============================
-                #      Mask_RCNN 종료시,
-                #==============================
-                elif mrcnn_isOn == True:
-                    while True:
-                        if detection.poll():
-                            with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
-                                end_time = time.time()
-                                t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
-                            mrcnn_isOn = False
-                            break 
+                
 
 
 class Thread(QThread):
@@ -1159,7 +1161,7 @@ class Ui_MainWindow(object):
             self.tab1.layout = QtWidgets.QVBoxLayout()
             self.tab1.layout.addWidget(MyWindow.windowcontainer)
             self.tab1.setLayout(self.tab1.layout)
-            time.sleep(0.1)
+            time.sleep(0.2)
 
         elif stepCount == 2:
             self.tab2 = QtWidgets.QWidget()
