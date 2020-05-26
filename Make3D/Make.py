@@ -347,19 +347,22 @@ class Start(QThread):
 
                     pSteps = subprocess.Popen(param)
                     # 끝나기 위한 True
-                    ends = True
+
 
                 #==================================
                 #      OpenMVG_OpenMVS 이벤트 루프
                 #==================================
-                if not mrcnn_isOn:
-                    while True:   
+                if not mrcnn_isOn and not ends:
+                    while True:
                         if pSteps.poll() is not None:
                             if count == 10:
                                 with open(output_dir + 'Progress/OpenMVG.txt' ,'wt') as t:
                                     end_time = time.time()
                                     t.writelines("총 걸린 시간: " + str(end_time - start_time) + "초\n")
                                     start_time_mvs = time.time()
+
+                            elif count == 14:
+                                ends = True
                             count += 1
                             break
                     
@@ -377,7 +380,7 @@ class Start(QThread):
                 #==============================
                 #      Mask_RCNN 종료시,
                 #==============================
-                else:
+                elif mrcnn_isOn == True:
                     while True:
                         if detection.poll():
                             with open(output_dir + 'Progress/Mask_RCNN.txt' ,'wt') as t:
@@ -1296,8 +1299,8 @@ class Ui_MainWindow(object):
         self.radioBtn_BRUTEFORCEL2.setText(_translate("MainWindow", "BRUTEFORCEL2"))
         self.radioBtn_ANNL2.setText(_translate("MainWindow", "ANNL2"))
         self.radioBtn_h.setText(_translate("MainWindow", "Homography"))
-        self.radioBtn_CASCADHEASHINGL2.setText(_translate("MainWindow", "CASCAD\n"
-"HEASHINGL2"))
+        self.radioBtn_CASCADHEASHINGL2.setText(_translate("MainWindow", "CASCADE\n"
+"HASHINGL2"))
         self.radioBtn_FASTCASCADEHASHINGL2.setText(_translate("MainWindow", "FASTCASCADE\n"
 "HASHINGL2"))
         self.radioBtn_BRUTEFORCEHAMMING.setText(_translate("MainWindow", "BRUTEFORCE\n"
