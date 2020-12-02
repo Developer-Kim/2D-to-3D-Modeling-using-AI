@@ -27,6 +27,9 @@ See the [Usage](https://github.com/ES-Justin-Kim/2D-to-3D-Modeling-using-AI/wiki
 ## License
 See the [Copyright](https://github.com/ES-Justin-Kim/2D-to-3D-Modeling-using-AI/tree/develop/COPYRIGHT.md) file.
 
+## Dissertation
+See the [Dissertation] wiki page.
+
 ## Contact
 * Hyeon Su Jeong - mses1572@naver.com  
 * Kang Wook Lee - zu7342@naver.com  
